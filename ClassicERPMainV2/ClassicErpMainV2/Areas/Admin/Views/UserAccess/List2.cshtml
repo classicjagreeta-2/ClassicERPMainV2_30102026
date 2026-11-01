@@ -1,0 +1,275 @@
+@{
+    Layout =  "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+    <meta charset="UTF-8">
+    <title>User Administration - User Rights</title>
+    <link href="~/Areas/Admin/Data/userlist.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+
+
+    <div id="app">
+        <div class="titlebar">
+            <span id="titleText">User Administration &mdash; User Rights Listing</span>
+            <div class="titlebar-right">
+                <button class="back-btn" id="btnBackToList" style="display:none">&larr; Back to List</button>
+                <span class="sub">Authentication Server: None</span>
+            </div>
+        </div>
+
+        <div id="listScreen">
+            <div class="list-toolbar">
+                <div class="search-wrap">
+                    <input id="userSearch" placeholder="Search by user name, name or group...">
+                </div>
+                <button class="action-btn primary" id="btnNewUserList">+ New User</button>
+            </div>
+
+            <!-- Scrollable Table Wrapper -->
+            <div class="user-table-scroll">
+                <table class="user-list-table">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Name</th>
+                            <th>Group</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Rights Granted</th>
+                            <th class="list-actions-col"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="userRows">
+                        @foreach (var u in Model.Users)
+                        {
+                            var pct = u.RightsTotal > 0
+                                ? (int)System.Math.Round(100.0 * u.RightsGranted / u.RightsTotal)
+                                : 0;
+
+                            <tr data-search="@($"{u.UserOra} {u.UserName} {u.GroupName}".ToLowerInvariant())">
+                                <td class="ua-user-id">@u.UserOra</td>
+                                <td>@u.UserName</td>
+                                <td>@u.GroupName</td>
+                                <td>@(string.IsNullOrWhiteSpace(u.Email) ? "—" : u.Email)</td>
+                                <td>
+                                    @if (u.IsActive)
+                                    {
+                                        <span class="status-pill active" data-id="1"><span class="dot"></span>Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill inactive" data-id="3"><span class="dot"></span>Inactive</span>
+                                    }
+                                </td>
+                                <td class="ua-rights-column">
+                                    <div class="rights-summary">
+                                        <div class="rights-bar">
+                                            <div class="ua-progress-fill" style="width: @(pct)%;"></div>
+                                        </div>
+                                        <span class="rights-count"> @u.RightsGranted/@u.RightsTotal granted</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="ua-row-actions">
+                                        <button type="button" class="row-action-btn" data-action="rights" onclick="location.href='@Url.Action("Index", "UserAccess", new { userOra = u.UserOra })'">Rights</button>
+                                        <button type="button" class="row-action-btn danger" data-action="delete" data-user="@u.UserOra">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="list-empty" id="listEmpty" style="display:none">No users match your search.</div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('userSearch').addEventListener('input', function (e) {
+        var q = e.target.value.trim().toLowerCase();
+        document.querySelectorAll('#userRows tr').forEach(function (row) {
+            var haystack = row.getAttribute('data-search') || '';
+            row.classList.toggle('ua-row-hidden', q !== '' && haystack.indexOf(q) === -1);
+        });
+    });
+
+     document.getElementById('btnNewUserList').addEventListener('click', function () {
+        window.location.href = '@Url.Action("Index", "UserAccess", new { isNew = true })';
+    });
+
+    document.querySelectorAll('.ua-btn-delete-row').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var userOra = btn.getAttribute('data-user');
+            if (!confirm('Want to delete user ' + userOra + '?')) return;
+            $.post('@Url.Action("Delete", "UserAccess")', { userOra: userOra })
+                .done(function (result) {
+                    if (result.success) {
+                        btn.closest('tr').remove();
+                    } else {
+                        alert(result.message);
+                    }
+                });
+        });
+    });
+    </script>
+
+
+
+
+
+
+
+
+
+
+
+
+<!--@model ClassicErpMainV2.Areas.Admin.Controllers.UserListViewModel
+@{
+    ViewBag.Title = "User Administration — User Rights Listing";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>@ViewBag.Title</title>
+    <link href="~/Areas/Admin/Data/useraccess.css" rel="stylesheet" />
+    <script src="~/Areas/Admin/Scripts/useraccess-tree.js"></script>
+</head>
+<body class="ua-page">
+
+    <div class="ua-header">
+        <h1>User Administration — User Rights Listing</h1>
+        <div class="ua-header-right">
+            <span>Authentication Server: None</span>
+        </div>
+    </div>
+
+    <div class="ua-body" style="grid-template-columns: 1fr;">
+
+        <div class="ua-card ua-user-list">-->
+<!-- Search toolbar -->
+<!--<div class="ua-list-toolbar">
+    <div class="ua-search-wrap">
+        <span class="ua-search-icon">&#128269;</span>
+        <input type="text"
+               class="ua-search-input"
+               id="txtSearch"
+               placeholder="Search by user name, name or group..." />
+    </div>
+
+    <button class="ua-btn-new" id="btnNewUser" type="button">
+        <span>+</span> New User
+    </button>
+</div>-->
+<!-- Scrollable table -->
+<!--<div class="ua-table-scroll">
+                <table class="ua-table">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Name</th>
+                            <th>Group</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Rights Granted</th>
+                            <th class="ua-actions-heading">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="userRows">
+                        @foreach (var u in Model.Users)
+                        {
+                            var pct = u.RightsTotal > 0
+
+                                ? (int)System.Math.Round(
+                                    100.0 * u.RightsGranted / u.RightsTotal)
+                                : 0;
+
+                            <tr data-search="@($"{u.UserOra} {u.UserName} {u.GroupName}".ToLowerInvariant())">
+                                <td class="ua-user-id">@u.UserOra</td>
+                                <td>@u.UserName</td>
+                                <td>@u.GroupName</td>
+                                <td>@(string.IsNullOrWhiteSpace(u.Email) ? "—" : u.Email)</td>
+                                <td>
+                                    @if (u.IsActive)
+                                    {
+                                        <span class="ua-status-pill ua-status-active">
+                                            <span class="ua-dot ua-dot-granted"></span>
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="ua-status-pill ua-status-inactive">
+                                            <span class="ua-dot ua-dot-unavailable"></span>
+                                            Inactive
+                                        </span>
+                                    }
+                                </td>
+                                <td class="ua-rights-column">
+                                    <div class="ua-progress-track">
+                                        <div class="ua-progress-fill"
+                                             style="width: @(pct)%;"></div>
+                                    </div>
+                                    <span class="ua-rights-label">
+                                        @u.RightsGranted/@u.RightsTotal granted
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="ua-row-actions">
+                                        <button type="button"
+                                                class="ua-btn-rights"
+                                                onclick="location.href='@Url.Action("Index", "UserAccess", new { userOra = u.UserOra })'">
+                                            Rights
+                                        </button>
+                                        <button type="button"
+                                                class="ua-btn-delete-row"
+                                                data-user="@u.UserOra">
+                                            Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        document.getElementById('txtSearch').addEventListener('input', function (e) {
+            var q = e.target.value.trim().toLowerCase();
+            document.querySelectorAll('#userRows tr').forEach(function (row) {
+                var haystack = row.getAttribute('data-search') || '';
+                row.classList.toggle('ua-row-hidden', q !== '' && haystack.indexOf(q) === -1);
+            });
+        });
+
+        document.getElementById('btnNewUser').addEventListener('click', function () {
+            window.location.href = '@Url.Action("Index", "UserAccess", new { isNew = true })';
+        });
+
+        document.querySelectorAll('.ua-btn-delete-row').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var userOra = btn.getAttribute('data-user');
+                if (!confirm('Want to delete user ' + userOra + '?')) return;
+                $.post('@Url.Action("Delete", "UserAccess")', { userOra: userOra })
+                    .done(function (result) {
+                        if (result.success) {
+                            btn.closest('tr').remove();
+                        } else {
+                            alert(result.message);
+                        }
+                    });
+            });
+        });
+    </script>
+</body>
+</html>-->

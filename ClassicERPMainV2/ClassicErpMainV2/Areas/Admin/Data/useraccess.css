@@ -1,0 +1,1509 @@
+@charset "UTF-8";
+/* useraccess.css — visual language for the User Administration / User Rights screen.
+   Design system: a restrained navy/neutral palette with ONE semantic color triad
+   (green/red/gray) reserved strictly for grant status, so the dots stay legible against
+   everything else. Elevation comes from soft shadows rather than heavy borders; spacing
+   follows a 4px rhythm; every interactive element has a real hover/focus transition. */
+
+:root {
+    /* -- palette -- */
+    --ua-navy: #16223a;
+    --ua-navy-soft: #1f3152;
+    --ua-navy-ink: #ffffff;
+    --ua-bg: #eef1f5;
+    --ua-card: #ffffff;
+    --ua-border: #e4e8ee;
+    --ua-border-strong: #d4dae2;
+    --ua-text: #1a2330;
+    --ua-text-muted: #667085;
+    --ua-placeholder: #a0a8b6;
+    --ua-granted: #15976a;
+    --ua-granted-bg: #e4f7ef;
+    --ua-denied: #de4b4f;
+    --ua-denied-bg: #fcebec;
+    --ua-unavailable: #aab2c0;
+    --ua-accent: #d79c1f;
+    --ua-accent-soft: #fbf1dd;
+    --ua-danger: #c9332c;
+    --ua-danger-border: #eab8b5;
+    /* -- geometry -- */
+    --ua-radius-sm: 6px;
+    --ua-radius: 8px;
+    --ua-radius-lg: 12px;
+    /* -- elevation -- */
+    --ua-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+    --ua-shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+    --ua-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.07), 0 1px 2px rgba(16, 24, 40, 0.05);
+    --ua-shadow-focus: 0 0 0 3px rgba(31, 49, 82, 0.14);
+    /* -- motion -- */
+    --ua-ease: cubic-bezier(0.2, 0, 0, 1);
+    --ua-fast: 120ms;
+    /* -- type -- */
+    --ua-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --ua-mono: "SFMono-Regular", "JetBrains Mono", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.ua-page {
+    background: var(--ua-bg);
+    font-family: var(--ua-font);
+    color: var(--ua-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+    .ua-page ::selection {
+        background: #cfe0f5;
+    }
+
+/* ---- header ---------------------------------------------------------- */
+
+.ua-header {
+    background: linear-gradient(180deg, var(--ua-navy-soft) 0%, var(--ua-navy) 100%);
+    color: var(--ua-navy-ink);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 28px;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 2px 8px rgba(16, 24, 40, 0.18);
+}
+
+    .ua-header h1 {
+        font-size: 16.5px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0;
+    }
+
+.ua-header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: #aab6c9;
+}
+
+.ua-btn-ghost-on-navy {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: var(--ua-navy-ink);
+    border-radius: var(--ua-radius-sm);
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--ua-fast) var(--ua-ease), border-color var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-btn-ghost-on-navy:hover {
+        background: rgba(255, 255, 255, 0.13);
+        border-color: rgba(255, 255, 255, 0.26);
+    }
+
+/* ---- layout ------------------------------------------------------------ */
+
+.ua-body {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 10px;
+    padding: 10px 28px 40px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .ua-body {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ua-card {
+    background: var(--ua-card);
+    border: 1px solid var(--ua-border);
+    border-radius: var(--ua-radius-lg);
+    box-shadow: var(--ua-shadow-sm);
+    padding: 15px;
+}
+
+/* ---- sidebar (user detail) --------------------------------------------- */
+
+.ua-user-badge {
+    display: inline-block;
+    background: var(--ua-navy);
+    color: #fff;
+    font-weight: 600;
+    font-size: 13.5px;
+    letter-spacing: 0.02em;
+    padding: 7px 16px;
+    border-radius: 999px;
+    margin-bottom: 20px;
+    box-shadow: var(--ua-shadow-xs);
+}
+
+.ua-field {
+    margin-bottom: 16px;
+}
+
+    .ua-field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ua-text-muted);
+        letter-spacing: 0.01em;
+        margin-bottom: 1px;
+    }
+
+    .ua-field input,
+    .ua-field select {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid var(--ua-border-strong);
+        border-radius: var(--ua-radius-sm);
+        padding: 2px 12px;
+        font-size: 14px;
+        font-family: inherit;
+        color: var(--ua-text);
+        background: #fff;
+        transition: border-color var(--ua-fast) var(--ua-ease), box-shadow var(--ua-fast) var(--ua-ease);
+    }
+
+        .ua-field input:hover:not(:disabled):not([readonly]),
+        .ua-field select:hover:not(:disabled) {
+            border-color: #c3cad6;
+        }
+
+        .ua-field input:focus,
+        .ua-field select:focus {
+            outline: none;
+            border-color: var(--ua-navy-soft);
+            box-shadow: var(--ua-shadow-focus);
+        }
+
+        .ua-field input:disabled,
+        .ua-field select:disabled,
+        .ua-field input[readonly] {
+            background: #f6f7f9;
+            color: var(--ua-placeholder);
+        }
+
+.ua-field-error {
+    font-size: 12px;
+    color: var(--ua-danger);
+    margin-top: 5px;
+    min-height: 0;
+    line-height: 1.4;
+}
+
+.ua-field.ua-field-invalid input,
+.ua-field.ua-field-invalid select {
+    border-color: var(--ua-danger) !important;
+    box-shadow: 0 0 0 3px rgba(201, 51, 44, 0.1) !important;
+}
+
+.ua-toggle-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.ua-toggle-btn {
+    flex: 1;
+    border: 1px solid var(--ua-border-strong);
+    background: #fff;
+    border-radius: var(--ua-radius-sm);
+    padding: 3px 4px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--ua-text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-toggle-btn:hover {
+        border-color: #c3cad6;
+        color: var(--ua-text);
+    }
+
+    .ua-toggle-btn.active {
+        border-color: var(--ua-accent);
+        background: var(--ua-accent-soft);
+        color: #8a650f;
+        font-weight: 600;
+    }
+
+.ua-policy-note {
+    background: #f7f8fa;
+    border: 1px solid var(--ua-border);
+    border-radius: var(--ua-radius-sm);
+    padding: 1px 13px;
+    font-size: 12px;
+    color: var(--ua-text-muted);
+    line-height: 1.55;
+    margin-bottom: 16px;
+}
+
+.ua-btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.ua-btn {
+    border-radius: var(--ua-radius-sm);
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: center;
+    border: 1px solid var(--ua-border-strong);
+    background: #fff;
+    color: var(--ua-text);
+    transition: all var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-btn:hover:not(:disabled) {
+        border-color: #b7bfcc;
+        box-shadow: var(--ua-shadow-xs);
+    }
+
+    .ua-btn:active:not(:disabled) {
+        transform: translateY(0.5px);
+    }
+
+    .ua-btn:disabled {
+        color: var(--ua-placeholder);
+        cursor: not-allowed;
+        background: #fafbfc;
+    }
+
+.ua-btn-primary {
+    background: var(--ua-navy);
+    color: #fff;
+    border-color: var(--ua-navy);
+}
+
+    .ua-btn-primary:hover:not(:disabled) {
+        background: var(--ua-navy-soft);
+        border-color: var(--ua-navy-soft);
+    }
+
+.ua-btn-danger {
+    color: var(--ua-danger);
+    border-color: var(--ua-danger-border);
+    background: #fff;
+}
+
+    .ua-btn-danger:hover:not(:disabled) {
+        background: var(--ua-denied-bg);
+    }
+
+.ua-legend {
+    display: flex;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--ua-border);
+    font-size: 13px;
+    color: var(--ua-text-muted);
+}
+
+.ua-legend-row {
+    /*display: flex;*/
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 7px;
+}
+
+.ua-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    display: inline-block;
+    box-shadow: 0 0 0 2.5px transparent;
+}
+
+.ua-dot-granted {
+    background: var(--ua-granted);
+}
+
+.ua-dot-denied {
+    background: var(--ua-denied);
+}
+
+.ua-dot-unavailable {
+    background: var(--ua-unavailable);
+}
+
+/* ---- rights panel -------------------------------------------------------- */
+
+.ua-rights-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 285px;
+    margin-bottom: 5px;
+}
+
+    .ua-rights-toolbar h2 {
+        font-size: 14.5px;
+        font-weight: 600;
+        letter-spacing: -0.005em;
+        margin: 0;
+        color: var(--ua-text);
+    }
+
+.ua-rights-toolbar-actions {
+    display: flex;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.ua-btn-small {
+    /* border: 1px solid var(--ua-border-strong);
+    background: #fff;
+    border-radius: var(--ua-radius-sm);
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    color: var(--ua-text);
+    transition: all var(--ua-fast) var(--ua-ease);*/
+
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 5px 9px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+    .ua-btn-small:hover {
+        border-color: #b7bfcc;
+        box-shadow: var(--ua-shadow-xs);
+    }
+
+.ua-filter-input {
+    border: 1px solid var(--ua-border-strong);
+    border-radius: var(--ua-radius-sm);
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: inherit;
+    width: 180px;
+    transition: border-color var(--ua-fast) var(--ua-ease), box-shadow var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-filter-input:focus {
+        outline: none;
+        border-color: var(--ua-navy-soft);
+        box-shadow: var(--ua-shadow-focus);
+    }
+
+.ua-select-all-row {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    background: #f7f8fa;
+    border: 1px solid var(--ua-border);
+    border-radius: var(--ua-radius-sm);
+    padding: 3px 16px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    color: var(--ua-text-muted);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    transition: opacity var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-select-all-row label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--ua-text);
+    }
+
+    .ua-select-all-row input[type="checkbox"] {
+        accent-color: var(--ua-navy);
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+    }
+
+    /* Disabled state — mirrors frmrfsh() greying controls out while FRMMODE = "V" */
+    .ua-select-all-row.ua-disabled {
+        opacity: 0.5;
+    }
+
+        .ua-select-all-row.ua-disabled label {
+            cursor: not-allowed;
+        }
+
+.ua-tree-panel.ua-readonly {
+    cursor: default;
+}
+
+    .ua-tree-panel.ua-readonly .ua-node-row:hover {
+        background: none;
+    }
+
+.ua-context-row {
+    display: grid;
+    grid-template-columns: 4fr 4fr 1fr auto;
+    gap: 5px;
+    align-items: end;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--ua-border);
+}
+
+    .ua-context-row .ua-field {
+        margin-bottom: 0;
+    }
+
+.ua-btn-load-context {
+    background: var(--ua-navy);
+    color: #fff;
+    border: none;
+    border-radius: var(--ua-radius-sm);
+    padding: 5px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--ua-fast) var(--ua-ease), box-shadow var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-btn-load-context:hover:not(:disabled) {
+        background: var(--ua-navy-soft);
+        box-shadow: var(--ua-shadow-xs);
+    }
+
+    .ua-btn-load-context:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+.ua-tree-panel {
+    border: 1px solid var(--ua-border);
+    border-radius: var(--ua-radius-sm);
+    padding: 14px 18px;
+    min-height: 300px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: var(--ua-mono);
+    font-size: 13.5px;
+    background: #fcfcfd;
+}
+
+.ua-tree-node {
+    list-style: none;
+}
+
+    .ua-tree-node > ul {
+        list-style: none;
+        padding-left: 22px;
+        margin: 1px 0;
+    }
+
+.ua-tree-root {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.ua-node-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 1px 1px;
+    border-radius: var(--ua-radius-sm);
+    cursor: pointer;
+    transition: background var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-node-row:hover {
+        background: #eef3fa;
+    }
+
+.ua-caret {
+    width: 12px;
+    color: var(--ua-text-muted);
+    font-size: 10px;
+    flex: 0 0 auto;
+    text-align: center;
+    user-select: none;
+    transition: transform var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-caret.ua-leaf {
+        visibility: hidden;
+    }
+
+.ua-node-name {
+    color: #1f3152;
+}
+
+.ua-node-hidden {
+    display: none;
+}
+
+.ua-tree-placeholder {
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--ua-placeholder);
+    font-family: var(--ua-font);
+    font-size: 13.5px;
+    line-height: 1.6;
+}
+
+.ua-aedv-row .ua-node-name {
+    color: #1f3152;
+}
+
+.ua-aedv-row .ua-dot {
+    width: 9px;
+    height: 9px;
+}
+
+/* ---- rights-panel framing ----------------------------------------------
+   The original form grouped this area with Frame controls (Frame4/Frame5/
+   Frame8/Frame9) — visually set apart from the rest of the screen. A soft
+   amber top accent plus a slightly stronger border reproduces that grouping
+   without reading as an alert or a validation state. */
+.ua-rights-frame {
+    border: 1px solid var(--ua-border-strong);
+    border-top: 3px solid var(--ua-accent);
+    border-radius: var(--ua-radius-lg);
+    box-shadow: var(--ua-shadow-md);
+}
+
+/* ---- user listing grid --------------------------------------------------- */
+
+.ua-list-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.ua-search-input {
+    flex: 1;
+    max-width: 460px;
+    border: 1px solid var(--ua-border-strong);
+    border-radius: var(--ua-radius-sm);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color var(--ua-fast) var(--ua-ease), box-shadow var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-search-input:focus {
+        outline: none;
+        border-color: var(--ua-navy-soft);
+        box-shadow: var(--ua-shadow-focus);
+    }
+
+.ua-btn-new {
+    background: var(--ua-granted);
+    color: #fff;
+    border: none;
+    border-radius: var(--ua-radius-sm);
+    padding: 11px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: var(--ua-shadow-xs);
+    transition: background var(--ua-fast) var(--ua-ease), box-shadow var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-btn-new:hover {
+        background: #108059;
+        box-shadow: var(--ua-shadow-sm);
+    }
+
+.ua-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .ua-table th {
+        text-align: left;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        color: var(--ua-text-muted);
+        text-transform: uppercase;
+        padding: 0 12px 12px;
+        border-bottom: 1px solid var(--ua-border);
+    }
+
+    .ua-table td {
+        padding: 15px 12px;
+        font-size: 14px;
+        color: var(--ua-text);
+        border-bottom: 1px solid #f0f2f4;
+        vertical-align: middle;
+    }
+
+    .ua-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .ua-table tr {
+        transition: background var(--ua-fast) var(--ua-ease);
+    }
+
+        .ua-table tr:hover td {
+            background: #fafbfc;
+        }
+
+.ua-muted {
+    color: var(--ua-placeholder);
+}
+
+.ua-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+    .ua-status-pill .ua-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+.ua-status-active {
+    background: var(--ua-granted-bg);
+    color: #0f7a53;
+}
+
+.ua-status-inactive {
+    background: #eef1f4;
+    color: var(--ua-text-muted);
+}
+
+.ua-rights-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 190px;
+}
+
+.ua-progress-track {
+    width: 110px;
+    height: 6px;
+    border-radius: 999px;
+    background: #e8ebef;
+    overflow: hidden;
+    flex: 0 0 auto;
+}
+
+.ua-progress-fill {
+    height: 100%;
+    background: var(--ua-granted);
+    border-radius: 999px;
+    transition: width 200ms var(--ua-ease);
+}
+
+.ua-rights-label {
+    font-size: 13px;
+    color: var(--ua-text-muted);
+    white-space: nowrap;
+}
+
+.ua-row-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.ua-btn-rights {
+    border: 1px solid var(--ua-border-strong);
+    background: #fff;
+    color: var(--ua-text);
+    border-radius: var(--ua-radius-sm);
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-btn-rights:hover {
+        border-color: #b7bfcc;
+        box-shadow: var(--ua-shadow-xs);
+    }
+
+.ua-btn-delete-row {
+    border: 1px solid var(--ua-danger-border);
+    background: #fff;
+    color: var(--ua-danger);
+    border-radius: var(--ua-radius-sm);
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background var(--ua-fast) var(--ua-ease);
+}
+
+    .ua-btn-delete-row:hover {
+        background: var(--ua-denied-bg);
+    }
+
+.ua-row-hidden {
+    display: none;
+}
+
+/* ---- Line Box Input Variant ------------------------------------------- */
+
+.ua-field input,
+.ua-field select {
+    width: 100%;
+    box-sizing: border-box;
+    border: none;
+    border-bottom: 2px solid var(--ua-border-strong);
+    border-radius: 0; /* Remove top/side rounded corners */
+    padding: 1px 2px; /* Adjusted padding for bottom border alignment */
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ua-text);
+    background: transparent; /* Seamless blend with card background */
+    transition: border-color var(--ua-fast) var(--ua-ease), box-shadow var(--ua-fast) var(--ua-ease);
+}
+
+    /* Hover State */
+    .ua-field input:hover:not(:disabled):not([readonly]),
+    .ua-field select:hover:not(:disabled) {
+        border-bottom-color: #c3cad6;
+    }
+
+    /* Focus State */
+    .ua-field input:focus,
+    .ua-field select:focus {
+        outline: none;
+        border-bottom-color: var(--ua-navy-soft);
+        box-shadow: 0 0px 0 0 var(--ua-navy-soft); /* Crisp underline accent instead of box glow */
+    }
+
+    /* Disabled & Read-Only States */
+    .ua-field input:disabled,
+    .ua-field select:disabled,
+    .ua-field input[readonly] {
+        background: transparent;
+        color: var(--ua-text-muted);
+        border-bottom: 1px dashed var(--ua-border-strong); /* Distinct dashed baseline for read-only */
+        cursor: default;
+    }
+
+/* Validation Error Override */
+.ua-field.ua-field-invalid input,
+.ua-field.ua-field-invalid select {
+    border-bottom-color: var(--ua-danger) !important;
+    box-shadow: 0 2px 0 0 var(--ua-danger) !important;
+}
+
+
+/*=========================*/
+/* ---- Voucher Rights Modal Overlay ------------------------------------ */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(16, 22, 36, 0.55);
+    backdrop-filter: blur(2px);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+    .modal-overlay.open {
+        display: flex;
+    }
+
+.modal-box {
+    background: var(--ua-card);
+    border: 1px solid var(--ua-border-strong);
+    border-radius: var(--ua-radius-lg);
+    width: 480px;
+    max-width: 90vw;
+    box-shadow: var(--ua-shadow-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    background: linear-gradient(180deg, var(--ua-navy-soft) 0%, var(--ua-navy) 100%);
+    color: var(--ua-navy-ink);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px 16px;
+    letter-spacing: -0.01em;
+}
+
+/* Container for table scrollability */
+.modal-body {
+    padding: 12px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+/* Voucher Table inside Modal */
+.modal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+    .modal-table th {
+        background: #f7f8fa;
+        color: var(--ua-text-muted);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--ua-border);
+        text-align: left;
+    }
+
+    .modal-table td {
+        padding: 8px 10px;
+        color: var(--ua-text);
+        border-bottom: 1px solid var(--ua-border);
+        vertical-align: middle;
+    }
+
+    .modal-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .modal-table tr:hover td {
+        background: #f8fafc;
+    }
+
+    .modal-table td.marker-col {
+        width: 40px;
+        color: var(--ua-text-muted);
+        font-family: var(--ua-mono);
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .modal-table td.allow-col,
+    .modal-table th.allow-col {
+        text-align: center;
+        width: 70px;
+    }
+
+    /* Checkbox styling */
+    .modal-table input[type="checkbox"] {
+        accent-color: var(--ua-navy);
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+    }
+
+        .modal-table input[type="checkbox"]:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+/* Footer area for Ok / Close actions */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f8fafc;
+    border-top: 1px solid var(--ua-border);
+}
+
+.ua-btn:disabled,
+.ua-btn.ua-disabled {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    pointer-events: none;
+    background: #f1f5f9 !important;
+    border-color: var(--ua-border-strong) !important;
+    color: var(--ua-placeholder) !important;
+    box-shadow: none !important;
+}
+
+
+.aedv-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.45);
+    align-items: center;
+    justify-content: center;
+}
+
+.aedv-modal-content {
+    width: 450px;
+    max-width: 90%;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+}
+
+.aedv-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+    .aedv-modal-header h3 {
+        margin: 0;
+    }
+
+    .aedv-modal-header button {
+        border: 0;
+        background: transparent;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+.aedv-modal-body {
+    padding: 20px;
+}
+
+.aedv-modal-footer {
+    padding: 12px 18px;
+    border-top: 1px solid #e5e7eb;
+    text-align: right;
+}
+
+#btnSaveAedv {
+    padding: 8px 18px;
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+
+.ua-aedv-btn {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    padding: 4px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: 6px;
+}
+
+.ua-aedv-btn:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.ua-aedv-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.ua-aedv-row .ua-node-name {
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+    /* Add */
+    .ua-aedv-row .ua-node-name:hover {
+        color: #2563eb;
+        text-decoration: underline;
+    }
+
+.disabled-div {
+    pointer-events: none; /* Prevents all mouse/touch interactions */
+    opacity: 0.5; /* Visually indicates the disabled state */
+    user-select: none; /* Prevents text selection */
+}
+
+/* Fullscreen transparent dark overlay */
+.ua-loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+    font-family: sans-serif;
+}
+
+/* CSS Spinning Animation */
+.ua-loader-spinner {
+    width: 48px;
+    height: 48px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #007bff; /* Primary theme color */
+    animation: ua-spin 0.9s linear infinite;
+}
+
+.ua-loader-text {
+    margin-top: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+@keyframes ua-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================================
+   User Rights Listing — Bootstrap 5 skin + scrolling table
+   APPEND THIS TO THE END of useraccess.css.
+   It has to load AFTER bootstrap.min.css (List.cshtml already does that) and
+   uses the :root tokens already defined at the top of useraccess.css.
+   ========================================================================= */
+
+/* ---- page + card shell ------------------------------------------------- */
+
+.ua-list-page {
+    padding: 12px 20px 28px;
+}
+
+.ua-list-shell {
+    background: var(--ua-card);
+    border: 1px solid var(--ua-border);
+    border-radius: var(--ua-radius-lg);
+    box-shadow: var(--ua-shadow-sm);
+    overflow: hidden; /* clips the navy header to the card's rounded corners */
+}
+
+    /* Scoped, so the header on the Index page keeps its compact size. */
+    .ua-list-shell > .ua-header {
+        padding: 16px 24px;
+        box-shadow: none;
+    }
+
+        .ua-list-shell > .ua-header h1 {
+            font-size: 18px;
+        }
+
+.ua-list-body {
+    padding: 22px 24px 24px;
+}
+
+/* ---- toolbar: search + New User ---------------------------------------- */
+
+.ua-list-search {
+    flex: 1 1 320px;
+    max-width: 540px;
+    padding: 10px 14px;
+    font-size: 15px;
+    color: var(--ua-text);
+    border: 1px solid var(--ua-border-strong);
+    border-radius: var(--ua-radius-sm);
+    box-shadow: none;
+}
+
+    .ua-list-search:focus {
+        border-color: var(--ua-navy-soft);
+        box-shadow: var(--ua-shadow-focus);
+    }
+
+    .ua-list-search::placeholder {
+        color: var(--ua-placeholder);
+    }
+
+.ua-list-btn-new {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--ua-granted);
+    --bs-btn-border-color: var(--ua-granted);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #108059;
+    --bs-btn-hover-border-color: #108059;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #0d6e4c;
+    --bs-btn-active-border-color: #0d6e4c;
+    --bs-btn-focus-shadow-rgb: 21, 151, 106;
+    --bs-btn-padding-x: 1.1rem;
+    --bs-btn-padding-y: 0.65rem;
+    --bs-btn-font-size: 0.85rem;
+    --bs-btn-font-weight: 600;
+    --bs-btn-border-radius: var(--ua-radius-sm);
+    box-shadow: var(--ua-shadow-xs);
+    white-space: nowrap;
+}
+
+/* ---- scrolling region ---------------------------------------------------
+   THE VISIBLE SIZE LIVES HERE. Rows scroll inside this box; the column
+   headers stay pinned. Default = viewport height minus the page chrome
+   (header, toolbar, padding). To pin it to a fixed size instead, set the
+   variable on the element or in :root, e.g.
+       .ua-table-scroll { --ua-list-scroll-h: 420px; }
+   ------------------------------------------------------------------------- */
+
+.ua-table-scroll {
+    max-height: var(--ua-list-scroll-h, calc(100vh - 230px));
+    min-height: 200px;
+    overflow: auto; /* vertical scroll for rows, horizontal on narrow screens */
+    scrollbar-width: thin;
+    scrollbar-color: #c3cad6 transparent;
+}
+
+    .ua-table-scroll::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .ua-table-scroll::-webkit-scrollbar-thumb {
+        background: #c3cad6;
+        border-radius: 999px;
+    }
+
+        .ua-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a9b2c1;
+        }
+
+/* ---- table ------------------------------------------------------------- */
+
+.ua-list-table {
+    --bs-table-color: var(--ua-text);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: #eef0f3;
+    --bs-table-hover-bg: #f8fafc;
+    --bs-table-hover-color: var(--ua-text);
+    min-width: 880px; /* below this the region scrolls sideways instead of squashing columns */
+    margin-bottom: 0;
+    font-size: 14.5px;
+}
+
+    /* Header cells are sticky; the rule under them is an inset shadow because a real
+       border would scroll away with the rows (border-collapse). */
+    .ua-list-table > thead > tr > th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--ua-card);
+        padding: 8px 14px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--ua-text-muted);
+        white-space: nowrap;
+        border-bottom: 0;
+        box-shadow: inset 0 -2px 0 var(--ua-border);
+    }
+
+    .ua-list-table > tbody > tr > td {
+        padding: 14px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--bs-table-border-color);
+    }
+
+    .ua-list-table > tbody > tr:last-child > td {
+        border-bottom: 0;
+    }
+
+/* ---- rights-granted progress bar -------------------------------------- */
+
+.ua-list-progress {
+    --bs-progress-height: 6px;
+    --bs-progress-bg: #e8ebef;
+    --bs-progress-bar-bg: var(--ua-granted);
+    --bs-progress-border-radius: 999px;
+    width: 110px;
+    flex: 0 0 auto;
+}
+
+/* ---- row action buttons ------------------------------------------------ */
+
+.ua-list-btn-rights,
+.ua-list-btn-delete {
+    --bs-btn-bg: #fff;
+    --bs-btn-padding-x: 0.8rem;
+    --bs-btn-padding-y: 0.35rem;
+    --bs-btn-font-size: 0.85rem;
+    --bs-btn-font-weight: 600;
+    --bs-btn-border-radius: var(--ua-radius-sm);
+    white-space: nowrap;
+}
+
+.ua-list-btn-rights {
+    --bs-btn-color: var(--ua-text);
+    --bs-btn-border-color: var(--ua-border-strong);
+    --bs-btn-hover-color: var(--ua-text);
+    --bs-btn-hover-bg: #f7f8fa;
+    --bs-btn-hover-border-color: #b7bfcc;
+    --bs-btn-active-color: var(--ua-text);
+    --bs-btn-active-bg: #eef1f5;
+    --bs-btn-active-border-color: #b7bfcc;
+    --bs-btn-focus-shadow-rgb: 31, 49, 82;
+}
+
+.ua-list-btn-delete {
+    --bs-btn-color: var(--ua-danger);
+    --bs-btn-border-color: var(--ua-danger-border);
+    --bs-btn-hover-color: var(--ua-danger);
+    --bs-btn-hover-bg: var(--ua-denied-bg);
+    --bs-btn-hover-border-color: var(--ua-danger-border);
+    --bs-btn-active-color: var(--ua-danger);
+    --bs-btn-active-bg: #f8dcdd;
+    --bs-btn-active-border-color: var(--ua-danger-border);
+    --bs-btn-focus-shadow-rgb: 201, 51, 44;
+}
+
+
+
+/* =========================================================================
+   User Rights Listing - Bootstrap 5 skin + scrolling table
+   APPEND THIS TO THE END of useraccess.css.
+   It has to load AFTER bootstrap.min.css (List.cshtml already does that) and
+   uses the :root tokens already defined at the top of useraccess.css.
+   ========================================================================= */
+
+/* ---- page + card shell ------------------------------------------------- */
+
+.ua-list-page {
+    padding: 12px 20px 28px;
+}
+
+.ua-list-shell {
+    background: var(--ua-card);
+    border: 1px solid var(--ua-border);
+    border-radius: var(--ua-radius-lg);
+    box-shadow: var(--ua-shadow-sm);
+    overflow: hidden; /* clips the navy header to the card's rounded corners */
+}
+
+    /* Scoped, so the header on the Index page keeps its compact size. */
+    .ua-list-shell > .ua-header {
+        padding: 16px 24px;
+        box-shadow: none;
+    }
+
+        .ua-list-shell > .ua-header h1 {
+            font-size: 18px;
+        }
+
+.ua-list-body {
+    padding: 22px 24px 24px;
+}
+
+/* ---- toolbar: search + New User ---------------------------------------- */
+
+.ua-list-search {
+    flex: 1 1 320px;
+    max-width: 540px;
+    padding: 10px 14px;
+    font-size: 15px;
+    color: var(--ua-text);
+    border: 1px solid var(--ua-border-strong);
+    border-radius: var(--ua-radius-sm);
+    box-shadow: none;
+}
+
+    .ua-list-search:focus {
+        border-color: var(--ua-navy-soft);
+        box-shadow: var(--ua-shadow-focus);
+    }
+
+    .ua-list-search::placeholder {
+        color: var(--ua-placeholder);
+    }
+
+.ua-list-btn-new {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--ua-granted);
+    --bs-btn-border-color: var(--ua-granted);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #108059;
+    --bs-btn-hover-border-color: #108059;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #0d6e4c;
+    --bs-btn-active-border-color: #0d6e4c;
+    --bs-btn-focus-shadow-rgb: 21, 151, 106;
+    --bs-btn-padding-x: 1.1rem;
+    --bs-btn-padding-y: 0.65rem;
+    --bs-btn-font-size: 0.85rem;
+    --bs-btn-font-weight: 600;
+    --bs-btn-border-radius: var(--ua-radius-sm);
+    box-shadow: var(--ua-shadow-xs);
+    white-space: nowrap;
+}
+
+/* ---- scrolling region ---------------------------------------------------
+   THE VISIBLE SIZE LIVES HERE. Rows scroll inside this box; the column
+   headers stay pinned. Default = viewport height minus the page chrome
+   (header, toolbar, padding). To pin it to a fixed size instead, set the
+   variable on the element or in :root, e.g.
+       .ua-table-scroll { --ua-list-scroll-h: 420px; }
+   ------------------------------------------------------------------------- */
+
+.ua-table-scroll {
+    max-height: var(--ua-list-scroll-h, calc(100vh - 230px));
+    min-height: 200px;
+    overflow: auto; /* vertical scroll for rows, horizontal on narrow screens */
+    scrollbar-width: thin;
+    scrollbar-color: #c3cad6 transparent;
+}
+
+    .ua-table-scroll::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .ua-table-scroll::-webkit-scrollbar-thumb {
+        background: #c3cad6;
+        border-radius: 999px;
+    }
+
+        .ua-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a9b2c1;
+        }
+
+/* ---- table ------------------------------------------------------------- */
+
+.ua-list-table {
+    --bs-table-color: var(--ua-text);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: #eef0f3;
+    --bs-table-hover-bg: #f8fafc;
+    --bs-table-hover-color: var(--ua-text);
+    min-width: 880px; /* below this the region scrolls sideways instead of squashing columns */
+    margin-bottom: 0;
+    font-size: 14.5px;
+}
+
+    /* Header cells are sticky; the rule under them is an inset shadow because a real
+       border would scroll away with the rows (border-collapse). */
+    .ua-list-table > thead > tr > th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--ua-card);
+        padding: 8px 14px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--ua-text-muted);
+        white-space: nowrap;
+        border-bottom: 0;
+        box-shadow: inset 0 -2px 0 var(--ua-border);
+    }
+
+    .ua-list-table > tbody > tr > td {
+        padding: 14px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--bs-table-border-color);
+    }
+
+    .ua-list-table > tbody > tr:last-child > td {
+        border-bottom: 0;
+    }
+
+/* ---- rights-granted progress bar -------------------------------------- */
+
+.ua-list-progress {
+    --bs-progress-height: 6px;
+    --bs-progress-bg: #e8ebef;
+    --bs-progress-bar-bg: var(--ua-granted);
+    --bs-progress-border-radius: 999px;
+    width: 110px;
+    flex: 0 0 auto;
+}
+
+/* ---- row action buttons ------------------------------------------------ */
+
+.ua-list-btn-rights,
+.ua-list-btn-delete {
+    --bs-btn-bg: #fff;
+    --bs-btn-padding-x: 0.8rem;
+    --bs-btn-padding-y: 0.35rem;
+    --bs-btn-font-size: 0.85rem;
+    --bs-btn-font-weight: 600;
+    --bs-btn-border-radius: var(--ua-radius-sm);
+    white-space: nowrap;
+}
+
+.ua-list-btn-rights {
+    --bs-btn-color: var(--ua-text);
+    --bs-btn-border-color: var(--ua-border-strong);
+    --bs-btn-hover-color: var(--ua-text);
+    --bs-btn-hover-bg: #f7f8fa;
+    --bs-btn-hover-border-color: #b7bfcc;
+    --bs-btn-active-color: var(--ua-text);
+    --bs-btn-active-bg: #eef1f5;
+    --bs-btn-active-border-color: #b7bfcc;
+    --bs-btn-focus-shadow-rgb: 31, 49, 82;
+}
+
+.ua-list-btn-delete {
+    --bs-btn-color: var(--ua-danger);
+    --bs-btn-border-color: var(--ua-danger-border);
+    --bs-btn-hover-color: var(--ua-danger);
+    --bs-btn-hover-bg: var(--ua-denied-bg);
+    --bs-btn-hover-border-color: var(--ua-danger-border);
+    --bs-btn-active-color: var(--ua-danger);
+    --bs-btn-active-bg: #f8dcdd;
+    --bs-btn-active-border-color: var(--ua-danger-border);
+    --bs-btn-focus-shadow-rgb: 201, 51, 44;
+}
+
+
+/* Header container alignment */
+.voucher-header-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* Ensure Description takes remaining space so Checkbox stays aligned with row checkboxes */
+.voucher-header-description {
+    flex-grow: 1;
+}
+
+.voucher-header-checkbox {
+    margin-left: auto;
+    padding-right: 8px; /* Row checkboxes alignment matching */
+}

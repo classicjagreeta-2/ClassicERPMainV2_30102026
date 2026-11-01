@@ -1,0 +1,731 @@
+﻿@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+
+<!-- Notification / Toast Alert -->
+<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+
+<!-- Main Container -->
+<div class="space-y-6">
+
+    <!-- ================= SECTION: LICENSES ================= -->
+    <section id="section-licenses" class="space-y-4">
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <!-- Title -->
+            <div>
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">Company Licenses</h2>
+                <p class="text-xs text-slate-500">Manage tenant accounts, user thresholds, and subscription plans</p>
+            </div>
+
+            <!-- Right Controls: Table Search Box + Add License + Refresh Data -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Table Search Box -->
+                <div class="relative w-64">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </div>
+                    <input type="text"
+                           id="license-table-search"
+                           onkeyup="searchLicenseTable()"
+                           placeholder="Search in table..."
+                           class="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-all shadow-sm" />
+                    <!-- Clear Search Button -->
+                    <button onclick="clearTableSearch()"
+                            id="clear-table-search-btn"
+                            class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+
+                <!-- 1. Add Company License Button -->
+                <button onclick="openLicenseModal()"
+                        class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm shadow-brand-600/20 flex items-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>New Company License</span>
+                </button>
+
+                <!-- 2. Refresh Data Button -->
+                <button onclick="fetchLicenses()"
+                        class="bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 shadow-sm"
+                        title="Refresh License Data">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 text-brand-600"></i>
+                    <span>Refresh Data</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold tracking-wider">
+                    <tr>
+                        <th class="py-3 px-4">ID</th>
+                        <th class="py-3 px-4">Code</th>
+                        <th class="py-3 px-4">Company Name</th>
+                        <th class="py-3 px-4">Plan</th>
+                        <th class="py-3 px-4 text-center">Max Users</th>
+                        <th class="py-3 px-4 text-center">Max Concurrent</th>
+                        <th class="py-3 px-4">Expiry Date</th>
+                        <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="license-table-body" class="divide-y divide-slate-100 font-medium">
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-slate-400">Loading licenses...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ================= SECTION: SESSIONS ================= -->
+    <!-- Search & Active Filter Banner -->
+    <div id="session-filter-banner" class="hidden bg-brand-50 border border-brand-200 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs text-brand-900 shadow-sm">
+        <div class="flex items-center gap-2">
+            <i data-lucide="filter" class="w-4 h-4 text-brand-600"></i>
+            <span>Filtering sessions by Company: <strong id="filter-company-name" class="text-slate-900 font-bold"></strong></span>
+        </div>
+        <div class="flex items-center gap-3">
+            <!-- Clear Filter Only -->
+            <button onclick="clearCompanyFilter()" style="display:none" class="text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors font-medium">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i> Clear Filter
+            </button>
+
+            <!-- Back to Company Licenses Button -->
+            <button onclick="backToCompanyLicenses()" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all shadow-sm">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to Company Licenses
+            </button>
+        </div>
+    </div>
+
+    <section id="section-sessions" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 tracking-tight">User Sessions Force Logout</h2>
+                <p class="text-xs text-slate-500">Track active and past user login activity across tenant nodes</p>
+            </div>
+            <button onclick="openSessionModal()" class="hidden flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm">
+                <i data-lucide="plus" class="w-4 h-4"></i> New Session Log
+            </button>
+        </div>
+
+        <div class="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold tracking-wider">
+                    <tr>
+                        <th class="py-3 px-4">ID</th>
+                        <th class="py-3 px-4">User Name</th>
+                        <th class="py-3 px-4">Company Code</th>
+                        <th class="py-3 px-4">Company Name</th>
+                        <th class="py-3 px-4">Login Time</th>
+                        <th class="py-3 px-4">Last Activity</th>
+                        <th class="py-3 px-4 text-center">Online</th>
+                        <th class="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="session-table-body" class="divide-y divide-slate-100 font-medium">
+                    <tr>
+                        <td colspan="8" class="py-8 text-center text-slate-400">Loading sessions...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</div>
+
+<!-- ================= MODAL: LICENSE FORM ================= -->
+<div id="modal-license" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="bg-white border border-slate-200 rounded-xl max-w-xl w-full p-6 space-y-6 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+            <h3 id="license-modal-title" class="text-base font-bold text-slate-900">Add Company License</h3>
+            <button onclick="closeModal('modal-license')" class="text-slate-400 hover:text-slate-700 text-lg leading-none">&times;</button>
+        </div>
+
+        <form id="form-license" onsubmit="saveLicense(event)" class="grid grid-cols-2 gap-4">
+            <input type="hidden" id="lic-id">
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">COMPANY CODE</label>
+                <input type="text" id="lic-company-code" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">COMPANY NAME</label>
+                <input type="text" id="lic-company-name" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">PLAN NAME</label>
+                <input type="text" id="lic-plan-name" placeholder="Enterprise, Pro, Starter" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">IS ACTIVE (Y/N)</label>
+                <select id="lic-is-active" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+                    <option value="Y">Y - Active</option>
+                    <option value="N">N - Inactive</option>
+                </select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">MAX USERS</label>
+                <input type="number" id="lic-max-users" required min="1" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">MAX CONCURRENT USERS</label>
+                <input type="number" id="lic-max-concurrent" required min="1" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1 col-span-2">
+                <label class="text-xs font-semibold text-slate-700">EXPIRY DATE</label>
+                <input type="date" id="lic-expiry-date" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="col-span-2 flex justify-end gap-3 border-t border-slate-200 pt-4 mt-2">
+                <button type="button" onclick="closeModal('modal-license')" class="px-4 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700">Cancel</button>
+                <button type="submit" class="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold shadow-sm shadow-brand-600/20">Save License</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================= MODAL: SESSION FORM ================= -->
+<div id="modal-session" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4">
+    <div class="bg-white border border-slate-200 rounded-xl max-w-xl w-full p-6 space-y-6 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+            <h3 id="session-modal-title" class="text-base font-bold text-slate-900">Add User Login Session</h3>
+            <button onclick="closeModal('modal-session')" class="text-slate-400 hover:text-slate-700 text-lg leading-none">&times;</button>
+        </div>
+
+        <form id="form-session" onsubmit="saveSession(event)" class="grid grid-cols-2 gap-4">
+            <input type="hidden" id="ses-id">
+
+            <div class="space-y-1 col-span-2">
+                <label class="text-xs font-semibold text-slate-700">USER NAME</label>
+                <input type="text" id="ses-username" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">COMPANY CODE</label>
+                <input type="text" id="ses-company-code" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">COMPANY NAME</label>
+                <input type="text" id="ses-company-name" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">LOGIN TIME</label>
+                <input type="datetime-local" id="ses-login-time" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">LAST ACTIVITY</label>
+                <input type="datetime-local" id="ses-last-activity" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">LOGOUT TIME</label>
+                <input type="datetime-local" id="ses-logout-time" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-xs font-semibold text-slate-700">IS ONLINE (Y/N)</label>
+                <select id="ses-is-online" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-brand-600 focus:bg-white font-medium">
+                    <option value="Y">Y - Online</option>
+                    <option value="N">N - Offline</option>
+                </select>
+            </div>
+
+            <div class="col-span-2 flex justify-end gap-3 border-t border-slate-200 pt-4 mt-2">
+                <button type="button" onclick="closeModal('modal-session')" class="px-4 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700">Cancel</button>
+                <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm">Save Session</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- JavaScript Controller Logic connected to Web API -->
+<script>
+    // Update this URL to match your ASP.NET Core API server base address
+    const API_BASE_URL = '/SaaSManagement';
+
+    let currentActiveTab = 'licenses';
+    let licensesCache = [];
+    let sessionsCache = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchLicenses();
+        lucide.createIcons();
+    });
+
+    // Filter table rows directly using DOM textContent
+    function searchLicenseTable() {
+        const input = document.getElementById('license-table-search');
+        const filter = input.value.toLowerCase().trim();
+        const clearBtn = document.getElementById('clear-table-search-btn');
+
+        // Make sure your <tbody> has id="licenses-table-body" or adjust ID here
+        const tbody = document.getElementById('licenses-table-body') || document.querySelector('tbody');
+        if (!tbody) return;
+
+        const rows = tbody.getElementsByTagName('tr');
+
+        // Toggle clear button
+        if (clearBtn) {
+            clearBtn.classList.toggle('hidden', filter.length === 0);
+        }
+
+        // Loop through all table rows
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+
+            // Skip empty state or loading indicator rows
+            if (row.classList.contains('no-search')) continue;
+
+            // Get all text content from row cells
+            const text = row.textContent || row.innerText;
+
+            if (text.toLowerCase().indexOf(filter) > -1) {
+                row.style.display = ""; // Show row
+            } else {
+                row.style.display = "none"; // Hide row
+            }
+        }
+    }
+
+    // Clear search input and show all rows again
+    function clearTableSearch() {
+        const input = document.getElementById('license-table-search');
+        if (input) {
+            input.value = '';
+            searchLicenseTable();
+        }
+    }
+
+    function parseJsonDate(dtStr) {
+        if (!dtStr) return '-';
+
+        let date;
+
+        // Convert ASP.NET /Date(1767225600000)/ to JS Date object
+        if (typeof dtStr === 'string' && dtStr.includes('/Date(')) {
+            const timestamp = parseInt(dtStr.replace(/\/Date\((.*?)\)\//, '$1'), 10);
+            date = new Date(timestamp);
+        } else {
+            date = new Date(dtStr);
+        }
+
+        if (isNaN(date.getTime())) return '-';
+
+        // Format output as YYYY-MM-DD
+        return date.toISOString().split('T')[0];
+    }
+
+    // Tab Switcher
+    function switchTab(tab) {
+        currentActiveTab = tab;
+        const licTab = document.getElementById('tab-licenses');
+        const sesTab = document.getElementById('tab-sessions');
+        const licSec = document.getElementById('section-licenses');
+        const sesSec = document.getElementById('section-sessions');
+        const filterBanner = document.getElementById('session-filter-banner');
+        if (tab === 'licenses') {
+            // Tab UI styling
+            //licTab.className = "pb-3 px-2 font-medium text-sm flex items-center gap-2 border-b-2 border-indigo-500 text-indigo-400 transition-colors";
+            //sesTab.className = "pb-3 px-2 font-medium text-sm flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-150 transition-colors";
+
+            // Show Licenses section, hide Sessions section
+            licSec.classList.remove('hidden');
+            sesSec.classList.add('hidden');
+
+            // HIDE the filtering banner on Company Licenses tab
+            if (filterBanner) {
+                filterBanner.classList.add('hidden');
+            }
+
+            fetchLicenses();
+        } else {
+            // Tab UI styling
+            //sesTab.className = "pb-3 px-2 font-medium text-sm flex items-center gap-2 border-b-2 border-emerald-500 text-emerald-400 transition-colors";
+            //licTab.className = "pb-3 px-2 font-medium text-sm flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-150 transition-colors";
+
+            // Show Sessions section, hide Licenses section
+            sesSec.classList.remove('hidden');
+            licSec.classList.add('hidden');
+
+            // SHOW the filtering banner ONLY if an active company filter exists
+            if (filterBanner && activeCompanyFilter) {
+                filterBanner.classList.remove('hidden');
+            }
+
+            fetchSessions();
+        }
+    }
+
+    function refreshCurrentTab() {
+        if (currentActiveTab === 'licenses') fetchLicenses();
+        else fetchSessions();
+    }
+
+    // Helper: Toast Notifications
+    function showToast(message, isError = false) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `pointer-events-auto px-4 py-3 rounded-lg shadow-xl text-xs font-medium border flex items-center gap-2 transition-all duration-300 ${isError
+            ? 'bg-rose-950 border-rose-800 text-rose-200'
+            : 'bg-emerald-950 border-emerald-800 text-emerald-200'
+            }`;
+        toast.innerHTML = `<i data-lucide="${isError ? 'alert-circle' : 'check-circle'}" class="w-4 h-4"></i> ${message}`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        setTimeout(() => toast.remove(), 3500);
+    }
+
+    // Helper: Format Date strings
+    function formatDate(dtStr) {
+        debugger;
+        if (!dtStr) return '-';
+        const date = new Date(dtStr);
+        //return isNaN(date) ? dtStr : date.toISOString().split('T')[0];
+        var dtx = parseJsonDate(dtStr)
+        return dtx;
+    }
+
+    function formatDateTimeLocal(dtStr) {
+        if (!dtStr) return '';
+        const date = new Date(dtStr);
+        if (isNaN(date)) return '';
+        return date.toISOString().slice(0, 16);
+    }
+
+    // ================= COMPANY LICENCES API =================
+
+    async function fetchLicenses() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/GetLicences`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            licensesCache = await res.json();
+            renderLicenses(licensesCache);
+        } catch (err) {
+            console.error(err);
+            document.getElementById('license-table-body').innerHTML = `
+                            <tr><td colspan="9" class="py-6 text-center text-rose-400">Failed to load licenses from API. Verify API server URL.</td></tr>
+                        `;
+        }
+    }
+
+    function renderLicenses(data) {
+        const tbody = document.getElementById('license-table-body');
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-500">No company licenses found.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = data.map(lic => {
+            const companyCode = lic.companY_CODE || lic.COMPANY_CODE;
+            const companyName = lic.companY_NAME || lic.COMPANY_NAME;
+            const id = lic.id || lic.ID;
+
+            return `
+                    <tr class="hover:bg-slate-900/50 transition-colors">
+                        <td class="py-3 px-4 text-xs font-mono text-slate-400">${id}</td>
+                        <td class="py-3 px-4 font-mono font-medium text-slate-150">${companyCode}</td>
+
+                        <!-- Clickable Company Name to filter Sessions -->
+                        <td class="py-3 px-4">
+                            <button onclick="openSessionsForCompany('${companyCode}', '${companyName.replace(/'/g, "\\'")}')"
+                                    class="font-semibold text-indigo-400 hover:text-indigo-300 hover:underline flex items-center gap-1.5 text-left"
+                                    title="Click to view sessions for ${companyName}">
+                                ${companyName}
+                                <i data-lucide="external-link" class="w-3.5 h-3.5 opacity-70"></i>
+                            </button>
+                        </td>
+
+                        <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">${lic.plaN_NAME || lic.PLAN_NAME}</span></td>
+                        <td class="py-3 px-4 text-center font-mono">${lic.maX_USERS ?? lic.MAX_USERS}</td>
+                        <td class="py-3 px-4 text-center font-mono">${lic.maX_CONCURRENT_USERS ?? lic.MAX_CONCURRENT_USERS}</td>
+                        <td class="py-3 px-4 text-xs text-slate-400">${parseJsonDate(lic.expirY_DATE || lic.EXPIRY_DATE)}</td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            <button onclick="editLicense(${id})" class="p-1 text-slate-400 hover:text-indigo-400 transition-colors"><i data-lucide="pencil" class="w-4 h-4 inline"></i></button>
+                            <button onclick="deleteLicense(${id})" class="p-1 text-slate-400 hover:text-rose-400 transition-colors"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                        </td>
+                    </tr>
+                `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function openLicenseModal(data = null) {
+        document.getElementById('form-license').reset();
+        if (data) {
+            document.getElementById('license-modal-title').innerText = 'Edit Company License';
+            document.getElementById('lic-id').value = data.id || data.ID;
+            document.getElementById('lic-company-code').value = data.companY_CODE || data.COMPANY_CODE;
+            document.getElementById('lic-company-name').value = data.companY_NAME || data.COMPANY_NAME;
+            document.getElementById('lic-plan-name').value = data.plaN_NAME || data.PLAN_NAME;
+            document.getElementById('lic-max-users').value = data.maX_USERS ?? data.MAX_USERS;
+            document.getElementById('lic-max-concurrent').value = data.maX_CONCURRENT_USERS ?? data.MAX_CONCURRENT_USERS;
+            document.getElementById('lic-expiry-date').value = formatDate(data.expirY_DATE || data.EXPIRY_DATE);
+            document.getElementById('lic-is-active').value = data.iS_ACTIVE || data.IS_ACTIVE;
+        } else {
+            document.getElementById('license-modal-title').innerText = 'Add Company License';
+            document.getElementById('lic-id').value = '';
+        }
+        document.getElementById('modal-license').classList.remove('hidden');
+    }
+
+    async function saveLicense(event) {
+        event.preventDefault();
+        const id = document.getElementById('lic-id').value;
+        const dto = {
+            ID: parseFloat(id),
+            COMPANY_CODE: document.getElementById('lic-company-code').value,
+            COMPANY_NAME: document.getElementById('lic-company-name').value,
+            PLAN_NAME: document.getElementById('lic-plan-name').value,
+            MAX_USERS: parseFloat(document.getElementById('lic-max-users').value),
+            MAX_CONCURRENT_USERS: parseFloat(document.getElementById('lic-max-concurrent').value),
+            EXPIRY_DATE: new Date(document.getElementById('lic-expiry-date').value).toISOString(),
+            IS_ACTIVE: document.getElementById('lic-is-active').value
+        };
+
+        debugger;
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${API_BASE_URL}/SaveLicence/${id}` : `${API_BASE_URL}/SaveLicence`;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/SaveLicence`, {
+                method: "POST",
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dto)
+            });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            showToast(id ? 'License updated successfully!' : 'License created successfully!');
+            closeModal('modal-license');
+            fetchLicenses();
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to save license.', true);
+        }
+    }
+
+    function editLicense(id) {
+        const item = licensesCache.find(x => (x.id || x.ID) === id);
+        if (item) openLicenseModal(item);
+    }
+
+    async function deleteLicense(id) {
+        if (!confirm('Are you sure you want to delete this company license?')) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/CompanyLicences/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            showToast('License deleted successfully!');
+            fetchLicenses();
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to delete license.', true);
+        }
+    }
+
+    // ================= USER SESSIONS API =================
+
+    async function fetchSessions() {
+        try {
+            const res = await fetch(`${API_BASE_URL}/GetSessions`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            sessionsCache = await res.json();
+            renderSessions(sessionsCache);
+        } catch (err) {
+            console.error(err);
+            document.getElementById('session-table-body').innerHTML = `
+                            <tr><td colspan="9" class="py-6 text-center text-rose-400">Failed to load sessions from API. Verify API server URL.</td></tr>
+                        `;
+        }
+    }
+    // ================= FILTER & NAVIGATION HANDLERS =================
+    let activeCompanyFilter = null;
+    // Triggered when user clicks a Company Name in Licenses tab
+    function openSessionsForCompany(companyCode, companyName) {
+        activeCompanyFilter = { code: companyCode, name: companyName };
+
+        // Switch tab to Sessions
+        switchTab('sessions');
+    }
+    function backToCompanyLicenses() {
+        clearCompanyFilter();
+        switchTab('licenses');
+    }
+    function clearCompanyFilter() {
+        activeCompanyFilter = null;
+        document.getElementById('session-filter-banner').classList.add('hidden');
+        renderSessions(sessionsCache);
+    }
+    function renderSessions(data) {
+        const tbody = document.getElementById('session-table-body');
+        const filterBanner = document.getElementById('session-filter-banner');
+        const filterNameLabel = document.getElementById('filter-company-name');
+
+        // Apply company filter if set
+        let filteredData = data;
+        if (activeCompanyFilter) {
+            filteredData = data.filter(s => {
+                const cCode = s.companY_CODE || s.COMPANY_CODE;
+                const cName = s.companY_NAME || s.COMPANY_NAME;
+                return (cCode && cCode.toLowerCase() === activeCompanyFilter.code.toLowerCase()) ||
+                    (cName && cName.toLowerCase() === activeCompanyFilter.name.toLowerCase());
+            });
+
+            filterNameLabel.innerText = `${activeCompanyFilter.name} (${activeCompanyFilter.code})`;
+            filterBanner.classList.remove('hidden');
+        } else {
+            filterBanner.classList.add('hidden');
+        }
+
+        if (filteredData.length === 0) {
+            tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="py-8 text-center text-slate-500">
+                            ${activeCompanyFilter
+                    ? `No active sessions found for <strong>${activeCompanyFilter.name}</strong>.`
+                    : 'No user session logs found.'}
+                        </td>
+                    </tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filteredData.map(ses => {
+            const id = ses.id || ses.ID;
+            const userName = ses.useR_NAME || ses.USER_NAME;
+            const companyCode = ses.companY_CODE || ses.COMPANY_CODE;
+            const companyName = ses.companY_NAME || ses.COMPANY_NAME;
+            const loginTime = ses.logiN_TIME || ses.LOGIN_TIME;
+            const lastActivity = ses.lasT_ACTIVITY || ses.LAST_ACTIVITY;
+            const logoutTime = ses.logouT_TIME || ses.LOGOUT_TIME;
+            const isOnline = ses.iS_ONLINE || ses.IS_ONLINE;
+
+            return `
+                    <tr class="hover:bg-slate-900/50 transition-colors">
+                        <td class="py-3 px-4 text-xs font-mono text-slate-400">${id}</td>
+                        <td class="py-3 px-4 font-semibold text-slate-100">${userName}</td>
+                        <td class="py-3 px-4 font-mono text-xs text-slate-300">${companyCode}</td>
+                        <td class="py-3 px-4 text-slate-300">${companyName}</td>
+                        <td class="py-3 px-4 text-xs text-slate-400">${parseJsonDate(loginTime)}</td>
+                        <td class="py-3 px-4 text-xs text-slate-400">${parseJsonDate(lastActivity)}</td>
+                        <td class="py-3 px-4 text-center">
+                            ${isOnline === 'Y'
+                    ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-950 text-emerald-400 border border-emerald-800"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>Online</span>'
+                    : '<span class="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">Offline</span>'}
+                        </td>
+                        <td class="py-3 px-4 text-right space-x-1">
+                            ${isOnline === 'Y'
+                    ? `<button onclick="logoutSession(${id})" title="Force Logout"  class="p-1 text-slate-400 hover:text-amber-400 transition-colors"><i data-lucide="log-out" class="w-4 h-4 inline"></i></button>`
+                    : ''}
+                            <button onclick="editSession(${id})" style="display: none;" class="p-1 text-slate-400 hover:text-emerald-400 transition-colors"><i data-lucide="pencil" class="w-4 h-4 inline"></i></button>
+                            <button onclick="deleteSession(${id})" class="p-1 text-slate-400 hover:text-rose-400 transition-colors"><i data-lucide="trash-2" class="w-4 h-4 inline"></i></button>
+                        </td>
+                    </tr>
+                `;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function openSessionModal(data = null) {
+        document.getElementById('form-session').reset();
+        if (data) {
+            document.getElementById('session-modal-title').innerText = 'Edit User Session';
+            document.getElementById('ses-id').value = data.id || data.ID;
+            document.getElementById('ses-username').value = data.useR_NAME || data.USER_NAME;
+            document.getElementById('ses-company-code').value = data.companY_CODE || data.COMPANY_CODE;
+            document.getElementById('ses-company-name').value = data.companY_NAME || data.COMPANY_NAME;
+            document.getElementById('ses-login-time').value = formatDateTimeLocal(data.logiN_TIME || data.LOGIN_TIME);
+            document.getElementById('ses-last-activity').value = formatDateTimeLocal(data.lasT_ACTIVITY || data.LAST_ACTIVITY);
+            document.getElementById('ses-logout-time').value = formatDateTimeLocal(data.logouT_TIME || data.LOGOUT_TIME);
+            document.getElementById('ses-is-online').value = data.iS_ONLINE || data.IS_ONLINE;
+        } else {
+            document.getElementById('session-modal-title').innerText = 'Add User Login Session';
+            document.getElementById('ses-id').value = '';
+            const now = new Date().toISOString().slice(0, 16);
+            document.getElementById('ses-login-time').value = now;
+            document.getElementById('ses-last-activity').value = now;
+        }
+        document.getElementById('modal-session').classList.remove('hidden');
+    }
+
+    async function saveSession(event) {
+        event.preventDefault();
+        const id = document.getElementById('ses-id').value;
+        const logoutVal = document.getElementById('ses-logout-time').value;
+
+        const dto = {
+            USER_NAME: document.getElementById('ses-username').value,
+            COMPANY_CODE: document.getElementById('ses-company-code').value,
+            COMPANY_NAME: document.getElementById('ses-company-name').value,
+            LOGIN_TIME: new Date(document.getElementById('ses-login-time').value).toISOString(),
+            LAST_ACTIVITY: new Date(document.getElementById('ses-last-activity').value).toISOString(),
+            LOGOUT_TIME: logoutVal ? new Date(logoutVal).toISOString() : null,
+            IS_ONLINE: document.getElementById('ses-is-online').value
+        };
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${API_BASE_URL}/UserLoginSessions/${id}` : `${API_BASE_URL}/UserLoginSessions`;
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dto)
+            });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            showToast(id ? 'Session updated successfully!' : 'Session logged successfully!');
+            closeModal('modal-session');
+            fetchSessions();
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to save session.', true);
+        }
+    }
+
+    function editSession(id) {
+        const item = sessionsCache.find(x => (x.id || x.ID) === id);
+        if (item) openSessionModal(item);
+    }
+
+    async function logoutSession(id) {
+        if (!confirm('Force logout this active user?')) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/DeleteSession/${id}`, { method: 'POST' }); //ForceLogoutSession
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            showToast('User logged out successfully!');
+            fetchSessions();
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to force logout user.', true);
+        }
+    }
+
+    async function deleteSession(id) {
+        if (!confirm('Are you sure you want to delete this session log?')) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/DeleteSession/${id}`, { method: 'POST' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            showToast('Session log deleted!');
+            fetchSessions();
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to delete session.', true);
+        }
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+</script>

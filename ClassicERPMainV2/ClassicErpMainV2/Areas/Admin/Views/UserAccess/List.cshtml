@@ -1,0 +1,225 @@
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Notification / Toast Alert -->
+<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+
+<!-- Section: User Jag Management -->
+<div id="section-userjag" class="space-y-6">
+
+    <!-- Section Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+
+        <!-- Title -->
+        <div>
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">User Jag Details</h2>
+            <p class="text-xs text-slate-500">Manage location assignments, user identifiers, and security rights</p>
+        </div>
+
+        <!-- Right Controls: Table Search Box + Add User Jag + Refresh Data -->
+        <div class="flex flex-wrap items-center gap-2">
+
+            <!-- Table Search Box -->
+            <div class="relative w-64">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-150">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                </div>
+                <input type="text"
+                       id="userjag-table-search"
+                       onkeyup="searchUserJagTable()"
+                       placeholder="Search in table..."
+                       class="w-full pl-9 pr-8 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-all shadow-sm" />
+
+                <!-- Clear Search Button -->
+                <button onclick="clearUserJagSearch()"
+                        id="clear-userjag-search-btn"
+                        class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-150 hover:text-slate-600">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+
+            <!-- 1. Add User Jag Button -->
+            <button id="btnNewUserList"
+                    class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm shadow-brand-600/20 flex items-center gap-2">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>New User Jag</span>
+            </button>
+
+            <!-- 2. Refresh Data Button -->
+            <button onclick="fetchUserJags()"
+                    class="bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 shadow-sm"
+                    title="Refresh User Jag Data">
+                <i id="imgRefreshUserJag" data-lucide="refresh-cw" class="w-4 h-4 text-brand-600"></i>
+                <span>Refresh Data</span>
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- Data Table Container -->
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-700">
+                <thead class="bg-slate-50 text-slate-500 uppercase font-bold tracking-wider border-b border-slate-200">
+                    <tr>
+                        <th class="p-3.5">ID</th>
+                        <th class="p-3.5">Loca</th>
+                        <th class="p-3.5">User ID</th>
+                        <th class="p-3.5">User Name</th>
+                        <th class="p-3.5">Rights</th>
+                        <th class="p-3.5">Status</th>
+                        <th class="p-3.5 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userjag-table-body" class="divide-y divide-slate-100 font-medium">
+                    <!-- Dynamic Rows Rendered via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Global memory cache for USER_JAG records
+    let allUserJagsCache = [];
+    fetchUserJags();
+
+     document.getElementById('btnNewUserList').addEventListener('click', function () {
+        window.location.href = '@Url.Action("Index", "UserAccess", new { isNew = true })';
+    });
+    // 1. Fetch USER_JAG records from Controller
+    async function fetchUserJags() {
+        const refreshIcon = document.querySelector('[onclick="fetchUserJags()"] [data-lucide="refresh-cw"]');
+        if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+        try {
+            const res = await fetch('@Url.Action("GetUserJags", "UserAccess")');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            allUserJagsCache = await res.json();
+            renderUserJagTable(allUserJagsCache);
+        } catch (err) {
+            console.error('Failed to load User Jag details:', err);
+        } finally {
+            const icon = document.querySelector('[onclick="fetchUserJags()"] [data-lucide="refresh-cw"]');
+            if (icon) {
+                setTimeout(() => {
+                    icon.classList.remove('animate-spin');
+                }, 750); // 750ms gives a smooth, noticeable single spin
+            }
+        }
+    }
+
+    // 2. Render HTML Table Rows
+    function renderUserJagTable(data) {
+        const tbody = document.getElementById('userjag-table-body');
+        if (!tbody) return;
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `
+            <tr class="no-search">
+                <td colspan="7" class="p-8 text-center text-slate-500">
+                    <i data-lucide="folder-open" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                    No User Jag records found.
+                </td>
+            </tr>`;
+            if (window.lucide) lucide.createIcons();
+            return;
+        }
+
+        tbody.innerHTML = data.map(item => {
+                const isActive = true || item.ActiveTag === true;
+            const id = item.ID || item.Id;
+            const userora = item.UserOra || item.USERORA;
+
+                return `
+            <tr class="hover:bg-slate-800/40 transition-colors">
+                <td class="p-3.5 font-mono text-xs text-indigo-400 font-semibold">#${id}</td>
+                <td class="p-3.5 font-medium text-slate-150">${item.Loca || ''}</td>
+                <td class="p-3.5 text-slate-150 font-semibold">${item.UserOra || ''}</td>
+                <td class="p-3.5 font-mono text-xs text-slate-150">${item.UserName || '-'}</td>
+                <td class="p-3.5 font-mono text-xs text-slate-150">${item.RightsTotal || '-'}</td>
+                <td class="p-3.5">
+                    ${isActive
+                        ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-950/80 text-emerald-400 border border-emerald-800/50">
+                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Active
+                           </span>`
+                        : `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-950/80 text-rose-400 border border-rose-800/50">
+                             <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Inactive
+                           </span>`
+                    }
+                </td>
+                <td class="p-3.5 text-right space-x-1">
+                    <button onclick="location.href='@Url.Action("Index", "UserAccess")?userOra=${userora}'" class="p-1.5 rounded-lg text-slate-150 hover:text-indigo-400 hover:bg-slate-800 transition-colors" title="Edit">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="deleteUserJag(${id})" class="p-1.5 rounded-lg text-slate-150 hover:text-rose-400 hover:bg-slate-800 transition-colors" title="Delete">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+            }).join('');
+
+        if (window.lucide) lucide.createIcons();
+
+        // Re-apply active search filter if input is not empty
+        searchUserJagTable();
+    }
+
+    // 3. DOM Table Search Function
+    function searchUserJagTable() {
+        const input = document.getElementById('userjag-table-search');
+        if (!input) return;
+
+        const filter = input.value.toLowerCase().trim();
+        const clearBtn = document.getElementById('clear-userjag-search-btn');
+        const tbody = document.getElementById('userjag-table-body');
+        if (!tbody) return;
+
+        const rows = tbody.getElementsByTagName('tr');
+
+        if (clearBtn) {
+            clearBtn.classList.toggle('hidden', filter.length === 0);
+        }
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            if (row.classList.contains('no-search')) continue;
+
+            const text = row.textContent || row.innerText;
+            row.style.display = (text.toLowerCase().indexOf(filter) > -1) ? "" : "none";
+        }
+    }
+
+    // 4. Clear Search helper
+    function clearUserJagSearch() {
+        const input = document.getElementById('userjag-table-search');
+        if (input) {
+            input.value = '';
+            searchUserJagTable();
+        }
+    }
+
+    // 5. Delete Action with standard popup
+    async function deleteUserJag(id) {
+        if (!confirm(`Are you sure you want to delete User Jag #${id}?`)) return;
+
+        try {
+            const res = await fetch(`@Url.Action("DeleteUserJag", "UserAccess")/${id}`, { method: 'POST' });
+            const result = await res.json();
+
+            if (res.ok && result.success) {
+                alert(`User Jag #${id} deleted successfully.`);
+                fetchUserJags();
+            } else {
+                alert(`Error: ${result.message || 'Failed to delete record.'}`);
+            }
+        } catch (err) {
+            console.error('Delete request failed:', err);
+        }
+    }
+</script>

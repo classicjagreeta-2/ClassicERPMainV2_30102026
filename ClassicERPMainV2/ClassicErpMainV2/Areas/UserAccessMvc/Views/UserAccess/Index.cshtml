@@ -1,0 +1,1732 @@
+@model ClassicErpMainV2.Areas.UserAccessMvc.Controllers.UserAccessIndexViewModel
+@{
+    ViewBag.Title = "User Administration — User Rights for ";
+    Layout = null; // this screen owns its full chrome, matching the mock exactly
+    var u = Model.SelectedUser;
+}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title @(u.IsNewRecord ? "NEW" : u.UserOra)</title>
+    <link href="~/Areas/UserAccessMvc/Data/useraccess.css" rel="stylesheet" />
+</head>
+<body class="ua-page">
+
+    <div class="ua-header">
+        <h1>@(u.IsNewRecord ? "NEW" : u.UserOra)</h1>
+        <div class="ua-header-right">
+            <button class="ua-btn-ghost-on-navy" id="btnBackToList" onclick="location.href='@Url.Action("List", "UserAccess")'" type="button"> Back to List</button>
+            <span id="lblAuthServer">Authentication Server: @(Model.AuthServerLabel ?? "None")</span>
+        </div>
+    </div>
+
+    <div class="ua-body">
+
+        <!-- ============ left: user detail card ============ -->
+        <div class="ua-card">
+            @*<span class="ua-user-badge" id="lblUserBadge">@(u.IsNewRecord ? "NEW" : u.UserOra)</span>*@
+
+            <div class="ua-field" id="fldUserOra">
+                <label for="txtUserOra">User Name</label>
+                <input type="text" class="line-input" id="txtUserOra" maxlength="10" @(u.IsNewRecord ? "" : "readonly") value="@u.UserOra" />
+                <div class="ua-field-error" id="errUserOra"></div>
+            </div>
+
+            <div class="ua-field" id="fldGroup">
+                <label for="ddlGroup">Group</label>
+                <select id="ddlGroup" disabled>
+                    @foreach (var g in Model.Groups)
+                    {
+                        if (string.Equals(g, u.Group, StringComparison.OrdinalIgnoreCase))
+                        {
+                            <option value="@g" selected="selected">@g</option>
+                        }
+                        else
+                        {
+                            <option value="@g">@g</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="ua-field" id="fldUserName">
+                <label for="txtUserName">Name</label>
+                <input type="text" id="txtUserName" @(u.IsNewRecord ? "" : "readonly") value="@u.UserName" />
+                <div class="ua-field-error" id="errUserName"></div>
+            </div>
+
+            <div class="ua-field" id="fldPassword">
+                <label for="txtPassword">Password</label>
+                <input type="password" id="txtPassword" @(u.IsNewRecord ? "" : "readonly") value="@(u.IsNewRecord ? "" : u.Password)" />
+                <div class="ua-field-error" id="errPassword"></div>
+            </div>
+
+            <div class="ua-field" id="fldPasswordConfirm">
+                <label for="txtPasswordConfirm">Confirm Password</label>
+                <input type="password" id="txtPasswordConfirm" @(u.IsNewRecord ? "" : "readonly") value="@(u.IsNewRecord ? "" : u.Password)" />
+                <div class="ua-field-error" id="errPasswordConfirm"></div>
+            </div>
+            <div class="ua-toggle-row ">
+                <button class="ua-btn ua-disabled" id="btnMail" disabled type="button">&#9993; Mail</button>
+                @*<button class="ua-toggle-btn" id="btnUnit" type="button" disabled>&#128188; Unit</button>*@
+                <button class="ua-btn ua-disabled" id="btnUnit" type="button" disabled>&#127970; Unit</button>
+                <button class="ua-btn ua-disabled" id="btnVoucher" disabled type="button">&#127915; Voucher</button>
+            </div>
+            <div class="ua-policy-note" id="pwdPolicyNote">
+                Password: Length Max @Model.PasswordPolicy.MaxLength, Min @Model.PasswordPolicy.MinLength.
+                Text: @Model.PasswordPolicy.MinAlphaChars. Sp.Char: @Model.PasswordPolicy.MinSpecialChars.
+                Numeric Char: @Model.PasswordPolicy.MinNumericChars.
+            </div>
+
+            <div class="ua-btn-row">
+                <button class="ua-btn" id="btnCancel" type="button" @(u.IsNewRecord ? "" : "disabled")>&#10005; Cancel</button>
+                <button class="ua-btn ua-btn-primary" id="btnEdit" type="button" @(u.IsNewRecord ? "disabled" : "")>&#9998; Edit</button>
+            </div>
+            <div class="ua-btn-row">
+                <button class="ua-btn" id="btnSave" type="button" @(u.IsNewRecord ? "" : "disabled")>&#128190; Save</button>
+                <button class="ua-btn ua-btn-danger" id="btnDelete" type="button" @(u.IsNewRecord ? "disabled" : "")>&#128465; Delete</button>
+            </div>
+        </div>
+
+        <!-- ============ right: rights tree card ============ -->
+        @if (Model.IsNew == false)
+        {
+            <div class="ua-card ua-rights-frame">
+                <div class="ua-rights-toolbar">
+                    <div class="ua-rights-toolbar">
+                        <h2 id="lblViewingRights">Viewing rights for @u.UserOra &middot; @u.Group</h2>
+                        <div class="ua-rights-toolbar-actions">
+                            <button class="ua-btn-small" id="btnExpandAll" type="button">Expand all</button>
+                            <button class="ua-btn-small" id="btnCollapseAll" type="button">Collapse all</button>
+                            <input type="text" class="ua-filter-input" id="txtFilter" placeholder="Filter features..." />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TWO SIDE-BY-SIDE SECTIONS -->
+                <div class="ua-rights-content">
+
+                    <!-- LEFT SIDE -->
+                    <div class="ua-context-row">
+
+                        <div class="ua-field">
+                            <label for="ddlContextModule">Module</label>
+                            <select id="ddlContextModule">
+                                <option value="">Please Select</option>
+                                @foreach (var m in Model.Modules)
+                                {
+                                    <option data-menutable="@m.MENU_TABLE" data-usracstable="@m.USRACS_TABLE" data-unittable="@m.UNIT_TABLE" value="@m.MODULE_CODE">@m.MODULE_NAME</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="ua-field">
+                            <label for="ddlContextCompany">Company</label>
+                            <select id="ddlContextCompany"><option value="">----</option></select>
+                        </div>
+                        <div class="ua-field">
+                            <label for="ddlContextYear">Year</label>
+                            <select id="ddlContextYear" style="min-width: 80px;max-width: 80px;"><option value="">----</option></select>
+                        </div>
+                        <button class="ua-btn-load-context" id="btnLoadContext" type="button">Load</button>
+                    </div>
+
+                    <!-- RIGHT SIDE -->
+                    <div class="ua-right-panel">
+                        <div class="ua-select-all-row ua-disabled" id="selectAllRow">
+                            <span>SELECT ALL:</span>
+                            <label><input type="checkbox" id="chkAll" disabled /> All rights</label>
+                            <label><input type="checkbox" id="chkAdd" disabled /> Add</label>
+                            <label><input type="checkbox" id="chkEdit" disabled /> Edit</label>
+                            <label><input type="checkbox" id="chkDelete" disabled /> Delete</label>
+                            <label><input type="checkbox" id="chkView" disabled /> View</label>
+                        </div>
+                        <div class="ua-tree-panel ua-readonly" id="treePanel"></div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Unit Rights Modal Overlay -->
+        <div id="unitModalOverlay" class="modal-overlay">
+            <div class="modal-box">
+                <div class="modal-header">
+                    User Wise Unit Rights
+                </div>
+                <div class="modal-body">
+                    <table class="modal-table">
+                        <thead>
+                            <tr>
+                                <th class="marker-col">#</th>
+                                <th>Unit Code</th>
+                                <th>Unit Name</th>
+                                <th class="allow-col">
+                                    <input type="checkbox" id="unitSelectAll" title="Select / Deselect All" />
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="unitGridBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="unitLinkOk" class="ua-btn ua-btn-primary">Ok</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="voucherModalOverlay" class="modal-overlay">
+            <div class="modal-box">
+                <div class="modal-header">
+                    User Wise Voucher Right
+                </div>
+                <div class="modal-body">
+                    <table class="modal-table">
+                        <thead>
+                            <tr>
+                                <th class="marker-col">#</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th class="allow-col">
+                                    <input type="checkbox" id="voucherSelectAll" title="Select / Deselect All" />
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="voucherGridBody">
+                            <!-- Populated dynamically by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="voucherLinkOk" class="ua-btn ua-btn-primary">Ok</button>
+                </div>
+            </div>
+        </div>
+
+        @*<div class="ua-node-row ua-aedv-row" data-id="123">
+                <span>Finance Rights</span>
+            </div>*@
+
+        <div id="aedvModal" class="aedv-modal">
+            <div class="aedv-modal-content">
+                <div class="aedv-modal-header">
+                    <h3 id="aedvModalTitle">AEDV Settings</h3>
+                    <button type="button" id="btnCloseAedv">&times;</button>
+                </div>
+
+                <div class="aedv-modal-body">
+                    <!-- Your controls here -->
+                    <label>
+                        Enter unlocking periods in
+                    </label>
+                    <input type="number" id="txtLockDays" min="0" onkeydown="return event.key !== '-' && event.key !== 'e';" value="0" />
+                    <label>
+                        days
+                    </label>
+                </div>
+
+                <div class="aedv-modal-footer">
+                    <button type="button" id="btnAedvSave" class="btn btn-primary">
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="~/Areas/UserAccessMvc/Scripts/useraccess-tree.js"></script>
+
+    <script>
+        var currentUserOra = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(u.UserOra));
+        var isNewUser = @Html.Raw(u.IsNewRecord ? "true" : "false");
+
+        var passwordPolicy = {
+            minLength: @Model.PasswordPolicy.MinLength,
+            maxLength: @Model.PasswordPolicy.MaxLength,
+            minAlpha: @Model.PasswordPolicy.MinAlphaChars,
+            minSpecial: @Model.PasswordPolicy.MinSpecialChars,
+            minNumeric: @Model.PasswordPolicy.MinNumericChars
+        };
+
+        var voucherRightRequired = @Html.Raw(Model.VoucherRightParaEnabled ? "true" : "false");
+
+        var menuTreeData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.MenuTree));
+        var currentUserRights = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(u.Rights ?? new System.Collections.Generic.List < ClassicErpMainV2.Areas.UserAccessMvc.Models.MenuRight > ()));
+
+        var treePanel = document.getElementById('treePanel');
+        var treePlaceholder = document.createElement('div');
+        treePlaceholder.className = 'ua-tree-placeholder';
+        treePlaceholder.textContent = 'Choose Module / Company / Year, then click Load to view rights.';
+        treePanel.appendChild(treePlaceholder);
+
+        var treeData = null;
+
+        function resetTreeToPlaceholder() {
+            treeData = null;
+            treePanel.innerHTML = '';
+            treePanel.appendChild(treePlaceholder);
+        }
+
+        function updateLoadButtonVisibility() {
+            var hasAll = !!(ddlModule.value && ddlCompany.value && ddlYear.value);
+            btnLoadContextEl.style.display = hasAll ? '' : 'none';
+        }
+
+        document.getElementById('btnExpandAll').addEventListener('click', function() {
+            if (!treeData) return;
+            UserAccessTree.expandAll(treeData);
+        });
+        document.getElementById('btnCollapseAll').addEventListener('click', function() {
+            if (!treeData) return;
+            UserAccessTree.collapseAll(treeData);
+        });
+        document.getElementById('txtFilter').addEventListener('input', function(e) {
+            if (!treeData) return;
+            UserAccessTree.filterTree(treeData, e.target.value);
+        });
+
+        [
+            ['chkAll', 'all'],
+            ['chkAdd', 'add'],
+            ['chkEdit', 'edit'],
+            ['chkDelete', 'delete'],
+            ['chkView', 'view']
+        ]
+        .forEach(function(pair) {
+            document.getElementById(pair[0]).addEventListener('change', function(e) {
+                if (!treeData) return;
+                UserAccessTree.selectAllColumn(treeData, pair[1], e.target.checked);
+            });
+        });
+
+        var selectAllRow = document.getElementById('selectAllRow');
+        var selectAllCheckboxes = document.querySelectorAll('#selectAllRow input[type=checkbox]');
+
+        var readonlyToggleIds = ['txtUserName', 'txtPassword', 'txtPasswordConfirm'];
+        var ddlGroupEl = document.getElementById('ddlGroup');
+
+        var fieldErrorEls = {
+            userOra: document.getElementById('errUserOra'),
+            userName: document.getElementById('errUserName'),
+            password: document.getElementById('errPassword'),
+            passwordConfirm: document.getElementById('errPasswordConfirm')
+        };
+        var fieldWrapperEls = {
+            userOra: document.getElementById('fldUserOra'),
+            userName: document.getElementById('fldUserName'),
+            password: document.getElementById('fldPassword'),
+            passwordConfirm: document.getElementById('fldPasswordConfirm')
+        };
+
+        function setMode(mode) { // 'V' | 'E' | 'A'
+            var editing = (mode === 'E' || mode === 'A' || mode === 'V');
+            UserAccessTree.setEditable(editing);
+            treePanel.classList.toggle('ua-readonly', !editing);
+            selectAllRow.classList.toggle('ua-disabled', !editing);
+            selectAllCheckboxes.forEach(function(cb) {
+                cb.disabled = !editing;
+            });
+
+            readonlyToggleIds.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (editing) el.removeAttribute('readonly');
+                else el.setAttribute('readonly', 'readonly');
+            });
+            ddlGroupEl.disabled = !editing;
+            // txtUserOra: editable only for a brand-new user, in either mode once editing starts.
+            var userOraEl = document.getElementById('txtUserOra');
+            if (editing && mode === 'A') userOraEl.removeAttribute('readonly');
+            else userOraEl.setAttribute('readonly', 'readonly');
+
+            document.getElementById('btnSave').disabled = !editing;
+            document.getElementById('btnCancel').disabled = !editing;
+            document.getElementById('btnEdit').disabled = editing;
+            document.getElementById('btnLoadContext').disabled = !editing; // data loads only in Edit/Add
+            clearValidationErrors();
+        }
+        setMode(isNewUser ? 'A' : 'V');
+
+        document.getElementById('btnEdit').addEventListener('click', function() {
+            setMode('E');
+        });
+        document.getElementById('btnCancel').addEventListener('click', function() {
+            if (isNewUser) {
+                // There's no "view" state to revert to for a record that doesn't exist yet.
+                window.location.href = '@Url.Action("List", "UserAccess")';
+                return;
+            }
+            setMode('V');
+        });
+
+        function clearValidationErrors() {
+            Object.keys(fieldErrorEls).forEach(function(key) {
+                fieldErrorEls[key].textContent = '';
+                fieldWrapperEls[key].classList.remove('ua-field-invalid');
+            });
+        }
+
+        function setFieldError(key, message) {
+            fieldErrorEls[key].textContent = message;
+            fieldWrapperEls[key].classList.add('ua-field-invalid');
+        }
+
+        function checkPasswordPolicy(pwd) {
+            if (/\s/.test(pwd)) return 'Spaces are not allowed in the password.';
+            if (pwd.length > passwordPolicy.maxLength) return 'Password must be at most ' + passwordPolicy.maxLength + ' characters.';
+            if (pwd.length < passwordPolicy.minLength) return 'Password must be at least ' + passwordPolicy.minLength + ' characters.';
+            var numeric = (pwd.match(/[0-9]/g) || []).length;
+            var alpha = (pwd.match(/[A-Za-z]/g) || []).length;
+            var special = pwd.length - numeric - alpha;
+            if (special < passwordPolicy.minSpecial) return 'Password needs at least ' + passwordPolicy.minSpecial + ' special character(s).';
+            if (numeric < passwordPolicy.minNumeric) return 'Password needs at least ' + passwordPolicy.minNumeric + ' numeric character(s).';
+            if (alpha < passwordPolicy.minAlpha) return 'Password needs at least ' + passwordPolicy.minAlpha + ' alphabetic character(s).';
+            return null;
+        }
+
+        function validateForm() {
+            clearValidationErrors();
+            var valid = true;
+
+            var userOra = document.getElementById('txtUserOra').value.trim();
+            var userName = document.getElementById('txtUserName').value.trim();
+            var password = document.getElementById('txtPassword').value;
+            var passwordConfirm = document.getElementById('txtPasswordConfirm').value;
+
+            if (userOra === '') {
+                setFieldError('userOra', 'Enter a user name.');
+                valid = false;
+            } else if (/\s/.test(userOra)) {
+                setFieldError('userOra', 'Spaces are not allowed.');
+                valid = false;
+            }
+
+            if (userName === '') {
+                setFieldError('userName', 'Enter a name.');
+                valid = false; // was "Enter User Name" in SAVE_Click
+            }
+
+            if (isNewUser && password === '') {
+                setFieldError('password', 'Empty password not allowed, please retry.');
+                valid = false;
+            } else if (password !== '') {
+                var policyError = checkPasswordPolicy(password);
+                if (policyError) {
+                    setFieldError('password', policyError);
+                    valid = false;
+                } else if (password !== passwordConfirm) {
+                    setFieldError('passwordConfirm', 'Password confirmation failed. Please try again.');
+                    valid = false;
+                }
+            }
+
+            if (voucherRightRequired) {
+                var selectedCount = currentVoucherRights.filter(function(v) {
+                    return v.IsAllowed;
+                }).length;
+                if (selectedCount === 0) {
+                    alert('This installation requires voucher-type rights to be assigned. Please click Voucher and select at least one type.');
+                    valid = false;
+                }
+            }
+
+            return valid;
+        }
+
+        document.getElementById('btnSave').addEventListener('click', function() {
+            if (!validateForm()) return;
+            if (!treeData) {
+                var proceed = confirm('No rights have been loaded (click Load first to review/edit them). Save anyway with no rights assigned?');
+                if (!proceed) return;
+            }
+
+            currentUnitRights = [];
+            var totalUnits = $("#unitGridBody .chk-unit").length;
+            var selectedCount = $("#unitGridBody .chk-unit:checked").length;
+            if (totalUnits !== selectedCount) {
+                $("#unitGridBody .chk-unit").each(function () {
+                    currentUnitRights.push({
+                        UnitCode: $(this).data("code"),
+                        IsAssigned: $(this).is(":checked")
+                    });
+                });
+            };
+
+            // 1. Filter selected Units
+            var selectedUnits = currentUnitRights
+                .filter(function(u) {
+                    return u.IsAssigned;
+                })
+                .map(function(u) {
+                    return {
+                        UnitCode: u.UnitCode,
+                        UnitName: u.UnitName
+                    };
+                });
+
+            // 2. Filter selected Voucher Types
+            var selectedVouchers = currentVoucherRights
+                .filter(function(v) {
+                    return v.IsAssigned;
+                })
+                .map(function(v) {
+                    return {
+                        UnitCode: u.UnitCode,
+                        UnitName: u.UnitName
+                    };
+                });
+
+            // Filter allowed vouchers and map to the required model format
+            var allowedVouchers = currentVoucherRights
+                .filter(function(v) {
+                    return v.IsAllowed;
+                })
+                .map(function(v) {
+                    return v.VouchType;
+                });
+
+            var payload = {
+                Record: {
+                    UserOra: document.getElementById('txtUserOra').value.trim(),
+                    UserName: document.getElementById('txtUserName').value.trim(),
+                    Group: document.getElementById('ddlGroup').value,
+                    Password: document.getElementById('txtPassword').value,
+                    PasswordConfirm: document.getElementById('txtPasswordConfirm').value,
+                    AssignedUnits: selectedUnits,
+                    VoucherRights: allowedVouchers,
+                    Rights: UserAccessTree.serializeRights({
+                        Children: treeData
+                    })
+                },
+                IsNewRecord: isNewUser
+            };
+
+            var btn = this;
+            btn.disabled = true;
+            $.ajax({
+                url: '@Url.Action("Save", "UserAccess")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function(result) {
+                    if (result.success) {
+                        alert(result.message);
+                        //setMode('V'); // sets btn.disabled appropriately for View mode
+                        window.location.href = '@Url.Action("List", "UserAccess")';
+                    } else {
+                        // Server-side rejection (duplicate user, policy failure the client
+                        // missed, etc.) — surfaced the same way as a client-side one.
+                        setFieldError('userOra', result.message);
+                        btn.disabled = false;
+                    }
+                },
+                error: function() {
+                    alert('Save failed — check the network tab for details.');
+                    btn.disabled = false;
+                }
+            });
+        });
+
+        document.getElementById('btnDelete').addEventListener('click', function() {
+            if (!confirm('Want to delete user ' + document.getElementById('txtUserOra').value + '?')) return;
+            $.post('@Url.Action("Delete", "UserAccess")', {
+                    userOra: document.getElementById('txtUserOra').value
+                })
+                .done(function(result) {
+                    alert(result.success ? 'Deleted.' : result.message);
+                });
+        });
+
+        document.getElementById('btnBackToList').addEventListener('click', function() {
+            window.location.href = '@Url.Action("List", "UserAccess")';
+        });
+
+        // ---- Module / Company / Year cascade ----
+        function onUserRecordLoaded(userData) {
+            // ... populate txtUserOra, ddlGroup, ddlModule, etc ...
+            $('#ddlContextModule').val(userData.ModuleCode);
+
+            // Refresh Voucher button state based on loaded module
+            updateVoucherControlState();
+        }
+        // Function to evaluate and update Voucher button state
+        function updateVoucherControlState() {
+            var $ddlModule = $('#ddlContextModule'); // Update ID if your Module dropdown has a different ID
+            var selectedModule = $ddlModule.val();
+            var $btnUnit = $('#btnUnit');
+            var $btnVoucher = $('#btnVoucher');
+
+            // Check if form is currently in an editable mode (e.g., FRMMODE != "V")
+            var isFormEditable = typeof UserAccessTree !== 'undefined' ? UserAccessTree.isEditable() : true;
+
+            if (isVoucherSupported(selectedModule) && isFormEditable) {
+                // Enable Voucher Button
+                $btnVoucher.prop('disabled', false).removeClass('ua-disabled');
+            } else {
+                // Disable Voucher Button
+                $btnVoucher.prop('disabled', true).addClass('ua-disabled');
+                // Reset selected voucher rights state
+                resetVoucherRights();
+                // Hide modal if open
+                $('#voucherModalOverlay').hide();
+            }
+        }
+
+        // Clear voucher state when module changes to a non-voucher module
+        function resetVoucherRights() {
+            if (typeof currentVoucherRights !== 'undefined' && currentVoucherRights.length > 0) {
+                currentVoucherRights.forEach(function(v) {
+                    v.IsAssigned = false;
+                });
+            }
+
+            // Reset UI elements in modal grid if rendered
+            $('#voucherGridBody input[type="checkbox"]').prop('checked', false);
+            $('#voucherSelectAll').prop('checked', false);
+        }
+
+        // Event listener for Year Dropdown change
+        $(document).on('change', '#ddlContextYear', function() {
+            var $ddlModule = $('#ddlContextModule'); // Update ID if your Module dropdown has a different ID
+            var selectedModule = $ddlModule.val();
+            var $btnUnit = $('#btnUnit');
+            if (selectedModule || selectedModule.trim() !== "") {
+                $btnUnit.prop('disabled', false).removeClass('ua-disabled');
+            } else {
+                $btnUnit.prop('disabled', true).removeClass('ua-disabled');
+            }
+            updateVoucherControlState();
+            var yearVal = $(this).val();
+
+            // Check if value is null, empty string, or undefined
+            if (!yearVal || yearVal.trim() === "") {
+                $btnUnit.prop('disabled', true).removeClass('ua-disabled');
+                $('#btnVoucher').prop('disabled', true).removeClass('ua-disabled');
+
+            }
+        });
+
+
+        // Function to check if the current module supports Vouchers
+        function isVoucherSupported(moduleValue) {
+            // Replace with your actual Module code(s) or condition
+            var allowedModules = ['FN', 'FIN', 'FINANCE'];
+            return allowedModules.indexOf(moduleValue) !== -1;
+        }
+
+        function populateSelect(selectEl, items, placeholder) {
+            selectEl.innerHTML = '';
+
+            // 2. Create and append the default option
+            var defaultOpt = document.createElement('option');
+            defaultOpt.value = ''; // empty value for validation
+            defaultOpt.textContent = '----';
+            defaultOpt.selected = true; // explicitly mark as selected
+            selectEl.appendChild(defaultOpt);
+
+            if (!items || items.length === 0) {
+                var empty = document.createElement('option');
+                empty.value = '';
+                empty.textContent = placeholder || 'None';
+                selectEl.appendChild(empty);
+                var $btnUnit = $('#btnUnit');
+                $('#btnUnit').prop('disabled', true).removeClass('ua-disabled');
+                $('#btnVoucher').prop('disabled', true).removeClass('ua-disabled');
+                return;
+            }
+
+            // 3. Loop through and append data items
+            items.forEach(function(item) {
+                var opt = document.createElement('option');
+                opt.value = item.value;
+                opt.textContent = item.text;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        var ddlModule = document.getElementById('ddlContextModule');
+        var ddlCompany = document.getElementById('ddlContextCompany');
+        var ddlYear = document.getElementById('ddlContextYear');
+        var btnLoadContextEl = document.getElementById('btnLoadContext');
+
+        function loadCompanies() {
+            $.getJSON('@Url.Action("GetCompanies", "UserAccess")', {
+                module: ddlModule.value
+            }, function(companies) {
+                populateSelect(ddlCompany, companies, 'No companies');
+                populateSelect(ddlYear, companies, 'No Year');
+                loadYears();
+            });
+        }
+
+        function loadYears() {
+            var selectedValue = ddlCompany.value;
+            var selectedText = ddlCompany.selectedIndex >= 0 ? ddlCompany.options[ddlCompany.selectedIndex].text : '';
+            if (selectedValue || selectedValue.trim() !== "") {
+                $.getJSON('@Url.Action("GetYears", "UserAccess")', {
+                    module: ddlModule.value,
+                    company: selectedText
+                }, function (years) {
+                    populateSelect(ddlYear, years, 'No years');
+                    resetTreeToPlaceholder();
+                    //updateLoadButtonVisibility();
+                });
+            }
+            else {
+                populateSelect(ddlYear, null, 'No years');
+            }
+        }
+
+        ddlModule.addEventListener('change', loadCompanies);
+        ddlCompany.addEventListener('change', loadYears);
+        ddlYear.addEventListener('change', function() {
+            var selectedModul = ddlModule.value;
+            var selectedCompany = ddlCompany.value;
+            var selectedYr = ddlYear.value;
+            if (selectedYr || selectedYr.trim() !== "") {
+                $.getJSON('@Url.Action("CurrentSession", "UserAccess")', {
+                    is_new_record: '@u.IsNewRecord',
+                    userOra: currentUserOra,
+                    module: ddlModule.value,
+                    company: ddlCompany.value,
+                    year: ddlYear.value
+                }).done(function(result) {
+
+                }).fail(function() {
+                    //    alert('Could not load rights for that Module/Company/Year.');
+                }).always(function() {
+                    //btn.disabled = !UserAccessTree.isEditable();
+                });
+                resetTreeToPlaceholder();
+                //updateLoadButtonVisibility();
+            }
+        });
+        loadCompanies(); // initial cascade on page load
+
+        document.getElementById('btnLoadContext').addEventListener('click', function() {
+            if (!UserAccessTree.isEditable()) return; // belt-and-suspenders alongside the disabled attribute
+            if (!currentUserOra) {
+                alert('No user selected.');
+                return;
+            }
+            var btn = this;
+            //btn.disabled = true;
+            $.getJSON('@Url.Action("GetVoucherRights", "UserAccess")', {
+                userOra: currentUserOra,
+                module: ddlModule.value,
+                company: ddlCompany.value,
+                year: ddlYear.value
+            }).done(function(result) {
+                if (!result.success) {
+                    alert(result.message);
+                    return;
+                }
+                if (treePlaceholder.parentNode) treePlaceholder.parentNode.removeChild(treePlaceholder);
+                treeData = UserAccessTree.renderTree(treePanel, menuTreeData, result.rights);
+                UserAccessTree.setEditable(UserAccessTree.isEditable()); // re-apply current mode to the freshly rendered tree
+                const btnExpandAllButton = document.getElementById('btnExpandAll');
+                if (btnExpandAllButton) {
+                    btnExpandAllButton.click(); // Triggers click event on #btnOther
+                }
+            }).fail(function() {
+                alert('Could not load rights for that Module/Company/Year.');
+            }).always(function() {
+
+            });
+
+        });
+
+
+        //=============================//
+        // Global array to store voucher rights selected by the user
+        var currentVoucherRights = [];
+
+        // Function to fetch voucher rights from controller
+        function loadVoucherRights() {
+            if (!ddlModule.value || !ddlCompany.value) return;
+
+            $.getJSON('@Url.Action("GetVoucherRights", "UserAccess")', {
+                    userOra: currentUserOra,
+                    module: ddlModule.value,
+                    company: ddlCompany.value,
+                    year: ddlYear.value
+                })
+                .done(function(result) {
+                    if (result.success) {
+                        currentVoucherRights = result.vouchers || [];
+                        renderVoucherGrid(currentVoucherRights);
+                    } else {
+                        alert('Failed to load voucher rights: ' + result.message);
+                    }
+                })
+                .fail(function() {
+                    console.error('Error fetching voucher rights.');
+                });
+        }
+
+        // Function to populate the modal grid
+        function renderVoucherGrid(vouchers) {
+            var $tbody = $('#voucherGridBody').empty();
+            var allChecked = vouchers.length > 0;
+
+            vouchers.forEach(function(v, index) {
+                //if (!v.IsAllowed) allChecked = false;
+                if (!v.Selected)
+                    allChecked = false;
+                if (v.Selected)
+                    allChecked = true;
+
+                var row = '<tr>' +
+                    '<td class="marker-col">' + (index + 1) + '</td>' +
+                    '<td>' + v.Type + '</td>' +
+                    '<td>' + v.DescOra + '</td>' +
+                    '<td class="allow-col">' +
+                    '<input type="checkbox" class="chk-voucher" data-type="' + v.Type + '" ' + (v.Selected ? 'checked' : '') + ' />' +
+                    '</td>' +
+                    '</tr>';
+                $tbody.append(row);
+            });
+
+            $('#voucherSelectAll').prop('checked', allChecked);
+        }
+
+        // ---- Event Listeners ----
+
+        // 1. Open Voucher Modal when the Voucher toggle button is clicked
+        $('#btnVoucher').on('click', function() {
+            loadVoucherRights();
+            $('#voucherModalOverlay').css('display', 'flex');
+        });
+
+        // 2. Close Modal on 'Ok'
+        $('#voucherLinkOk').on('click', function() {
+            // Sync UI selection back to array
+            $('#voucherGridBody tr').each(function() {
+                var vouchType = $(this).find('.chk-voucher').data('type');
+                var isChecked = $(this).find('.chk-voucher').is(':checked');
+
+                var target = currentVoucherRights.find(v => v.VouchType === vouchType);
+                if (target) {
+                    target.IsAllowed = isChecked;
+                }
+            });
+
+            $('#voucherModalOverlay').hide();
+        });
+
+        // 3. Select All Checkbox Handler
+        $('#voucherSelectAll').on('change', function() {
+            var isChecked = $(this).is(':checked');
+            $('.chk-voucher').prop('checked', isChecked);
+        });
+
+        // 4. Update "Select All" checkbox state when individual checkboxes change
+        $(document).on('change', '.chk-voucher', function() {
+            var total = $('.chk-voucher').length;
+            var checked = $('.chk-voucher:checked').length;
+            $('#voucherSelectAll').prop('checked', total === checked);
+        });
+
+
+        // Global memory state for assigned units
+        var currentUnitRights = [];
+
+        // Fetch unit rights from the server
+        function loadUnitRights(callback) {
+            if (!currentUserOra) {
+                if (callback) callback();
+                return;
+            }
+
+            $.getJSON('@Url.Action("GetAssignedUnits", "UserAccess")', {
+                    userOra: currentUserOra,
+                    module: ddlModule.value,
+                    company: ddlCompany.value,
+                    year: ddlYear.value
+                })
+                .done(function(result) {
+                    if (result.success) {
+                        currentUnitRights = result.data || [];
+                        renderUnitGrid(currentUnitRights);
+                    } else {
+                        alert('Failed to load unit rights: ' + result.message);
+                    }
+                })
+                .fail(function() {
+                    alert('Could not retrieve unit list. Check network or server configuration.');
+                })
+                .always(function() {
+                    if (callback) callback();
+                });
+        }
+
+        // Populate unit table dynamically
+        function renderUnitGrid(units) {
+            var $tbody = $('#unitGridBody').empty();
+
+            if (!units || units.length === 0) {
+                $tbody.append('<tr><td colspan="4" style="text-align:center;">No unit master records found.</td></tr>');
+                $('#unitSelectAll').prop('checked', false).prop('disabled', true);
+                return;
+            }
+
+            var isEditable = UserAccessTree.isEditable();
+            var allChecked = true;
+            debugger;
+            units.forEach(function(u, index) {
+                if (!u.IsAssigned) allChecked = false;
+
+                var row = '<tr>' +
+                    '<td class="marker-col">' + (index + 1) + '</td>' +
+                    '<td>' + (u.UnitCode || '') + '</td>' +
+                    '<td>' + (u.UnitName || '') + '</td>' +
+                    '<td class="allow-col">' +
+                    '<input type="checkbox" class="chk-unit" data-code="' + u.UnitCode + '" ' +
+                    (u.IsAssigned ? 'checked="checked"' : '') +
+                    (!isEditable ? ' disabled="disabled"' : '') + ' />' +
+                    '</td>' +
+                    '</tr>';
+                $tbody.append(row);
+            });
+
+            $('#unitSelectAll')
+                .prop('checked', allChecked)
+                .prop('disabled', !isEditable);
+        }
+
+        // ---- Unit Modal Events ----
+
+        // Open modal and load data
+        $('#btnUnit').on('click', function() {
+            loadUnitRights(function() {
+                $('#unitModalOverlay').css('display', 'flex');
+            });
+        });
+
+        // Sync UI checks back to in-memory array & close modal
+        $('#unitLinkOk').on('click', function() {
+            $('#unitGridBody tr').each(function() {
+                var $chk = $(this).find('.chk-unit');
+                var code = $chk.data('code');
+                if (code) {
+                    var target = currentUnitRights.find(function(u) {
+                        return u.UnitCode === code;
+                    });
+                    if (target) {
+                        target.IsAssigned = $chk.is(':checked');
+                    }
+                }
+            });
+
+            $('#unitModalOverlay').hide();
+        });
+
+        // "Select All" toggle
+        $('#unitSelectAll').on('change', function() {
+            var isChecked = $(this).is(':checked');
+            $('.chk-unit:not(:disabled)').prop('checked', isChecked);
+        });
+
+        // Sync "Select All" when individual checkboxes change
+        $(document).on('change', '.chk-unit', function() {
+            var total = $('.chk-unit').length;
+            var checked = $('.chk-unit:checked').length;
+            $('#unitSelectAll').prop('checked', total > 0 && total === checked);
+        });
+
+        $(document).on("click", ".ua-node-name", function () {
+            //var id = $(this).data("id");
+            //var lockDays = $(this).data("days");
+            //var text = $(this).text().trim()
+            //$("#aedvModal").data("id", id);
+            //$("#aedvModalTitle").text("AEDV Settings - " + text.toUpperCase());
+            //$("#aedvModal").css("display", "flex");
+            //$("#aedvValue").val(lockDays);
+
+            var id = $(this).data("id");
+            var text = $(this).text().trim();
+            var lockDays = Number($(this).data("days")) || 0;
+
+            // Store the actual tree node
+            $("#aedvModal").data("leafNode", this._leafNode);
+            $("#aedvModal").data("letter", this._letter);
+            $("#aedvModal").data("id", id);
+
+            $("#aedvModalTitle").text(
+                "AEDV Settings - " + text.toUpperCase()
+            );
+
+            // Load current value into popup
+            $("#txtLockDays").val(lockDays);
+
+            $("#aedvModal").css("display", "flex");
+
+        });
+
+        $(document).on("click", "#btnAedvSave", function () {
+
+            var modal = $("#aedvModal");
+
+            var leafNode = modal.data("leafNode");
+            var letter = modal.data("letter");
+            var label = modal.data("label");
+            var labelText = modal.data("labelText");
+
+            if (!leafNode || !letter) {
+                console.error("AEDV node information not found.");
+                return;
+            }
+
+            var lockDays = Number($("#txtLockDays").val());
+
+            if (!Number.isFinite(lockDays) || lockDays < 0) {
+                lockDays = 0;
+            }
+
+            lockDays = Math.floor(lockDays);
+
+            // Update actual tree node
+            switch (letter) {
+
+                case "A":
+                    leafNode._addLockDays = lockDays;
+                    break;
+
+                case "E":
+                    leafNode._editLockDays = lockDays;
+                    break;
+
+                case "D":
+                    leafNode._deleteLockDays = lockDays;
+                    break;
+
+                case "V":
+                    // View has no LockDays
+                    break;
+            }
+
+            // Update exact clicked label
+            if (label) {
+
+                label.setAttribute(
+                    "data-days",
+                    lockDays
+                );
+
+                label.setAttribute(
+                    "title",
+                    labelText + " Lock Days: " + lockDays
+                );
+            }
+
+            // Close popup
+            modal.css("display", "none");
+
+            // Clear modal references
+            modal.removeData("leafNode");
+            modal.removeData("letter");
+            modal.removeData("label");
+            modal.removeData("labelText");
+        });
+
+        //$("#btnAedvSave").on("click", function () {
+
+        //    var modal = $("#aedvModal");
+
+        //    var leafNode = modal.data("leafNode");
+        //    var letter = modal.data("letter");
+
+        //    if (!leafNode) {
+        //        console.error("AEDV tree node not found.");
+        //        return;
+        //    }
+
+        //    var lockDays = Number($("#txtLockDays").val());
+
+        //    if (!Number.isFinite(lockDays) || lockDays < 0) {
+        //        lockDays = 0;
+        //    }
+
+        //    // Update actual tree node
+        //    switch (letter) {
+        //        case "A":
+        //            leafNode._addLockDays = lockDays;
+        //            break;
+
+        //        case "E":
+        //            leafNode._editLockDays = lockDays;
+        //            break;
+
+        //        case "D":
+        //            leafNode._deleteLockDays = lockDays;
+        //            break;
+
+        //        case "V":
+        //            // View has no LockDays
+        //            break;
+        //    }
+
+        //    // Update label
+        //    var label = $('.ua-node-name[data-id="' + modal.data("id") + '"]');
+
+        //    label.attr("data-days", lockDays);
+        //    label.attr(
+        //        "title",
+        //        AEDV_LABELS[letter] + " Lock Days: " + lockDays
+        //    );
+
+        //    modal.css("display", "none");
+        //});
+
+        $(document).on("click", "#btnCloseAedv", function () {
+            $("#aedvModal").hide();
+        });
+
+    </script>
+
+
+    @*<script>
+            var currentUserOra = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(u.UserOra));
+            var isNewUser = @Html.Raw(u.IsNewRecord ? "true" : "false");
+
+            // Mirrors PasswordPolicyService.Validate() server-side — same four thresholds from
+            // MAST_PARAM, used here only to give instant feedback before the round trip; the
+            // server re-checks everything and remains the actual authority.
+            var passwordPolicy = {
+                minLength: @Model.PasswordPolicy.MinLength,
+                maxLength: @Model.PasswordPolicy.MaxLength,
+                minAlpha: @Model.PasswordPolicy.MinAlphaChars,
+                minSpecial: @Model.PasswordPolicy.MinSpecialChars,
+                minNumeric: @Model.PasswordPolicy.MinNumericChars
+            };
+            var voucherRightRequired = @Html.Raw(Model.VoucherRightParaEnabled ? "true" : "false");
+
+            // Server-rendered menu tree + the currently selected user's granted rights —
+            // was Rs1 (VBMENU_FIN) and RSUSR/TREEUPDATE("U") in the legacy form.
+            var menuTreeData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.MenuTree));
+            var currentUserRights = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(u.Rights ?? new System.Collections.Generic.List<ClassicErpMainV2.Areas.UserAccessMvc.Models.MenuRight>()));
+
+            // Rights data is NOT rendered automatically on page load — only once the person is
+            // in Edit/Add mode AND clicks "Load" for a chosen Module/Company/Year (see
+            // btnLoadContext below). treeData stays null until then; every tree-dependent
+            // control is a no-op before that.
+            var treePanel = document.getElementById('treePanel');
+            var treePlaceholder = document.createElement('div');
+            treePlaceholder.className = 'ua-tree-placeholder';
+            treePlaceholder.textContent = 'Choose Module / Company / Year, then click Load to view rights.';
+            treePanel.appendChild(treePlaceholder);
+
+            var treeData = null;
+
+                function resetTreeToPlaceholder() {
+                    treeData = null;
+                    treePanel.innerHTML = '';
+                    treePanel.appendChild(treePlaceholder);
+                }
+
+                function updateLoadButtonVisibility() {
+                    var hasAll = !!(ddlModule.value && ddlCompany.value && ddlYear.value);
+                    btnLoadContextEl.style.display = hasAll ? '' : 'none';
+                }
+
+            document.getElementById('btnExpandAll').addEventListener('click', function () {
+                if (!treeData) return;
+                UserAccessTree.expandAll(treeData);
+            });
+            document.getElementById('btnCollapseAll').addEventListener('click', function () {
+                if (!treeData) return;
+                UserAccessTree.collapseAll(treeData);
+            });
+            document.getElementById('txtFilter').addEventListener('input', function (e) {
+                if (!treeData) return;
+                UserAccessTree.filterTree(treeData, e.target.value);
+            });
+
+            [['chkAll', 'all'], ['chkAdd', 'add'], ['chkEdit', 'edit'], ['chkDelete', 'delete'], ['chkView', 'view']]
+                .forEach(function (pair) {
+                    document.getElementById(pair[0]).addEventListener('change', function (e) {
+                        if (!treeData) return;
+                        UserAccessTree.selectAllColumn(treeData, pair[1], e.target.checked);
+                    });
+                });
+
+            // ---- edit-mode gating: was FRMMODE switching between "V"/"E"/"A" in frmrfsh(),
+            // which enabled SAVE/the tree/select-all only while adding or editing. ----
+            var selectAllRow = document.getElementById('selectAllRow');
+            var selectAllCheckboxes = document.querySelectorAll('#selectAllRow input[type=checkbox]');
+
+            // txtUserOra is readonly-toggled (editable only when adding a brand-new user — the
+            // id itself can't change once created, matching legacy Text1.Enabled = False in the
+            // "E" case of frmrfsh()); ddlGroup is a <select>, which has no readonly, so it's
+            // toggled via .disabled like the other dropdowns.
+            var readonlyToggleIds = ['txtUserName', 'txtPassword', 'txtPasswordConfirm'];
+            var ddlGroupEl = document.getElementById('ddlGroup');
+
+                var fieldErrorEls = {
+                    userOra: document.getElementById('errUserOra'),
+                    userName: document.getElementById('errUserName'),
+                    password: document.getElementById('errPassword'),
+                    passwordConfirm: document.getElementById('errPasswordConfirm')
+                };
+                var fieldWrapperEls = {
+                    userOra: document.getElementById('fldUserOra'),
+                    userName: document.getElementById('fldUserName'),
+                    password: document.getElementById('fldPassword'),
+                    passwordConfirm: document.getElementById('fldPasswordConfirm')
+                };
+
+            function setMode(mode) { // 'V' | 'E' | 'A'
+                var editing = (mode === 'E' || mode === 'A' || mode === 'V');
+                UserAccessTree.setEditable(editing);
+                treePanel.classList.toggle('ua-readonly', !editing);
+                selectAllRow.classList.toggle('ua-disabled', !editing);
+                selectAllCheckboxes.forEach(function (cb) { cb.disabled = !editing; });
+
+                readonlyToggleIds.forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (editing) el.removeAttribute('readonly'); else el.setAttribute('readonly', 'readonly');
+                });
+                ddlGroupEl.disabled = !editing;
+                // txtUserOra: editable only for a brand-new user, in either mode once editing starts.
+                var userOraEl = document.getElementById('txtUserOra');
+                if (editing && mode === 'A') userOraEl.removeAttribute('readonly'); else userOraEl.setAttribute('readonly', 'readonly');
+
+                document.getElementById('btnSave').disabled = !editing;
+                document.getElementById('btnCancel').disabled = !editing;
+                document.getElementById('btnEdit').disabled = editing;
+                document.getElementById('btnLoadContext').disabled = !editing; // data loads only in Edit/Add
+                clearValidationErrors();
+            }
+            setMode(isNewUser ? 'A' : 'V');
+
+            document.getElementById('btnEdit').addEventListener('click', function () { setMode('E'); });
+            document.getElementById('btnCancel').addEventListener('click', function () {
+                if (isNewUser) {
+                    // There's no "view" state to revert to for a record that doesn't exist yet.
+                    window.location.href = '@Url.Action("List", "UserAccess")';
+                    return;
+                }
+                setMode('V');
+            });
+
+            // ---- client-side validation, mirroring the checks SAVE_Click made before ever
+            // touching the database (empty name, empty/mismatched password, password policy,
+            // voucher-type requirement) — catches the common mistakes instantly instead of
+            // waiting on a round trip, though the server (Save action) re-checks everything
+            // and remains the real authority. ----
+
+
+            function clearValidationErrors() {
+                Object.keys(fieldErrorEls).forEach(function (key) {
+                    fieldErrorEls[key].textContent = '';
+                    fieldWrapperEls[key].classList.remove('ua-field-invalid');
+                });
+            }
+
+            function setFieldError(key, message) {
+                fieldErrorEls[key].textContent = message;
+                fieldWrapperEls[key].classList.add('ua-field-invalid');
+            }
+
+            function checkPasswordPolicy(pwd) {
+                if (/\s/.test(pwd)) return 'Spaces are not allowed in the password.';
+                if (pwd.length > passwordPolicy.maxLength) return 'Password must be at most ' + passwordPolicy.maxLength + ' characters.';
+                if (pwd.length < passwordPolicy.minLength) return 'Password must be at least ' + passwordPolicy.minLength + ' characters.';
+                var numeric = (pwd.match(/[0-9]/g) || []).length;
+                var alpha = (pwd.match(/[A-Za-z]/g) || []).length;
+                var special = pwd.length - numeric - alpha;
+                if (special < passwordPolicy.minSpecial) return 'Password needs at least ' + passwordPolicy.minSpecial + ' special character(s).';
+                if (numeric < passwordPolicy.minNumeric) return 'Password needs at least ' + passwordPolicy.minNumeric + ' numeric character(s).';
+                if (alpha < passwordPolicy.minAlpha) return 'Password needs at least ' + passwordPolicy.minAlpha + ' alphabetic character(s).';
+                return null;
+            }
+
+            function validateForm() {
+                clearValidationErrors();
+                var valid = true;
+
+                var userOra = document.getElementById('txtUserOra').value.trim();
+                var userName = document.getElementById('txtUserName').value.trim();
+                var password = document.getElementById('txtPassword').value;
+                var passwordConfirm = document.getElementById('txtPasswordConfirm').value;
+
+                if (userOra === '') {
+                    setFieldError('userOra', 'Enter a user name.'); valid = false;
+                } else if (/\s/.test(userOra)) {
+                    setFieldError('userOra', 'Spaces are not allowed.'); valid = false;
+                }
+
+                if (userName === '') {
+                    setFieldError('userName', 'Enter a name.'); valid = false; // was "Enter User Name" in SAVE_Click
+                }
+
+                // Password is required for a brand-new user; for an existing one, an empty
+                // password means "keep the current password" (same as legacy's empty-Text2
+                // branch), so it's only validated here when the person actually typed something.
+                if (isNewUser && password === '') {
+                    setFieldError('password', 'Empty password not allowed, please retry.'); valid = false;
+                } else if (password !== '') {
+                    var policyError = checkPasswordPolicy(password);
+                    if (policyError) { setFieldError('password', policyError); valid = false; }
+                    else if (password !== passwordConfirm) {
+                        setFieldError('passwordConfirm', 'Password confirmation failed. Please try again.'); valid = false;
+                    }
+                }
+
+                if (voucherRightRequired) {
+                    var selectedCount = currentVoucherRights.filter(function (v) { return v.IsAllowed; }).length;
+                    if (selectedCount === 0) {
+                        alert('This installation requires voucher-type rights to be assigned. Please click Voucher and select at least one type.');
+                        valid = false;
+                    }
+                }
+
+                return valid;
+            }
+
+            document.getElementById('btnSave').addEventListener('click', function () {
+                if (!validateForm()) return;
+
+                // Rights are only populated by clicking Load — if that never happened, Save
+                // would silently submit an empty rights list, which reads as "revoke
+                // everything" rather than "nothing changed." Confirm instead of guessing.
+                if (!treeData) {
+                    var proceed = confirm('No rights have been loaded (click Load first to review/edit them). Save anyway with no rights assigned?');
+                    if (!proceed) return;
+                }
+                // 1. Filter selected Units
+                var selectedUnits = currentUnitRights
+                    .filter(function (u) { return u.IsAssigned; })
+                    .map(function (u) {
+                        return {
+                            UnitCode: u.UnitCode,
+                            UnitName: u.UnitName
+                        };
+                    });
+
+                // 2. Filter selected Voucher Types
+                var selectedVouchers = currentVoucherRights
+                    .filter(function (v) { return v.IsAssigned; })
+                    .map(function (v) {
+                        return {
+                            VoucherType: v.VoucherType,
+                            Description: v.Description
+                        };
+                    });
+
+                // Filter allowed vouchers and map to the required model format
+                var allowedVouchers = currentVoucherRights
+                    .filter(function (v) { return v.IsAllowed; })
+                    .map(function (v) { return v.VouchType; });
+
+                var payload = {
+                    Record: {
+                        UserOra: document.getElementById('txtUserOra').value.trim(),
+                        UserName: document.getElementById('txtUserName').value.trim(),
+                        Group: document.getElementById('ddlGroup').value,
+                        Password: document.getElementById('txtPassword').value,
+                        PasswordConfirm: document.getElementById('txtPasswordConfirm').value,
+                        AssignedUnits: selectedVouchers,
+                        VoucherRights: allowedVouchers,
+                        Rights: UserAccessTree.serializeRights({ Children: treeData })
+                    },
+                    IsNewRecord: isNewUser
+                };
+
+                var btn = this;
+                btn.disabled = true;
+                $.ajax({
+                    url: '@Url.Action("Save", "UserAccess")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function (result) {
+                        if (result.success) {
+                            alert(result.message);
+                            setMode('V'); // sets btn.disabled appropriately for View mode
+                        } else {
+                            // Server-side rejection (duplicate user, policy failure the client
+                            // missed, etc.) — surfaced the same way as a client-side one.
+                            setFieldError('userOra', result.message);
+                            btn.disabled = false;
+                        }
+                    },
+                    error: function () {
+                        alert('Save failed — check the network tab for details.');
+                        btn.disabled = false;
+                    }
+                });
+            });
+
+            document.getElementById('btnDelete').addEventListener('click', function () {
+                if (!confirm('Want to delete user ' + document.getElementById('txtUserOra').value + '?')) return;
+                $.post('@Url.Action("Delete", "UserAccess")', { userOra: document.getElementById('txtUserOra').value })
+                    .done(function (result) { alert(result.success ? 'Deleted.' : result.message); });
+            });
+
+            document.getElementById('btnBackToList').addEventListener('click', function () {
+                window.location.href = '@Url.Action("List", "UserAccess")';
+            });
+
+                // ---- Module / Company / Year cascade ----
+                function onUserRecordLoaded(userData) {
+                    // ... populate txtUserOra, ddlGroup, ddlModule, etc ...
+                    $('#ddlContextModule').val(userData.ModuleCode);
+
+                    // Refresh Voucher button state based on loaded module
+                    updateVoucherControlState();
+                }
+                // Function to evaluate and update Voucher button state
+                function updateVoucherControlState() {
+                    var $ddlModule = $('#ddlContextModule'); // Update ID if your Module dropdown has a different ID
+                    var selectedModule = $ddlModule.val();
+                    var $btnUnit = $('#btnUnit');
+                    var $btnVoucher = $('#btnVoucher');
+
+                    // Check if form is currently in an editable mode (e.g., FRMMODE != "V")
+                    var isFormEditable = typeof UserAccessTree !== 'undefined' ? UserAccessTree.isEditable() : true;
+
+                    if (isVoucherSupported(selectedModule) && isFormEditable) {
+                        // Enable Voucher Button
+                        $btnVoucher.prop('disabled', false).removeClass('ua-disabled');
+                    } else {
+                        // Disable Voucher Button
+                        $btnVoucher.prop('disabled', true).addClass('ua-disabled');
+                        // Reset selected voucher rights state
+                        resetVoucherRights();
+                        // Hide modal if open
+                        $('#voucherModalOverlay').hide();
+                    }
+                }
+
+                // Clear voucher state when module changes to a non-voucher module
+                function resetVoucherRights() {
+                    if (typeof currentVoucherRights !== 'undefined' && currentVoucherRights.length > 0) {
+                        currentVoucherRights.forEach(function (v) {
+                            v.IsAssigned = false;
+                        });
+                    }
+
+                    // Reset UI elements in modal grid if rendered
+                    $('#voucherGridBody input[type="checkbox"]').prop('checked', false);
+                    $('#voucherSelectAll').prop('checked', false);
+                }
+
+                // Event listener for Year Dropdown change
+                $(document).on('change', '#ddlContextYear', function () {
+                    var $ddlModule = $('#ddlContextModule'); // Update ID if your Module dropdown has a different ID
+                    var selectedModule = $ddlModule.val();
+                    var $btnUnit = $('#btnUnit');
+                    if (selectedModule || selectedModule.trim() !== "") {
+                        $btnUnit.prop('disabled', false).removeClass('ua-disabled');
+                    }
+                    else {
+                        $btnUnit.prop('disabled', true).removeClass('ua-disabled');
+                    }
+                    updateVoucherControlState();
+                });
+
+
+                // Function to check if the current module supports Vouchers
+                function isVoucherSupported(moduleValue) {
+                    // Replace with your actual Module code(s) or condition
+                    var allowedModules = ['FN', 'FIN', 'FINANCE'];
+                    return allowedModules.indexOf(moduleValue) !== -1;
+                }
+
+                function populateSelect(selectEl, items, placeholder) {
+                    selectEl.innerHTML = '';
+
+                    // 2. Create and append the default option
+                    var defaultOpt = document.createElement('option');
+                    defaultOpt.value = ''; // empty value for validation
+                    defaultOpt.textContent = '----';
+                    defaultOpt.selected = true; // explicitly mark as selected
+                    selectEl.appendChild(defaultOpt);
+
+                    if (!items || items.length === 0) {
+                        var empty = document.createElement('option');
+                        empty.value = ''; empty.textContent = placeholder || 'None';
+                        selectEl.appendChild(empty);
+                        var $btnUnit = $('#btnUnit');
+                        $('#btnUnit').prop('disabled', true).removeClass('ua-disabled');
+                        $('#btnVoucher').prop('disabled', true).removeClass('ua-disabled');
+                        return;
+                    }
+
+                    // 3. Loop through and append data items
+                    items.forEach(function (item) {
+                        var opt = document.createElement('option');
+                        opt.value = item.value;
+                        opt.textContent = item.text;
+                        selectEl.appendChild(opt);
+                    });
+                }
+
+            var ddlModule = document.getElementById('ddlContextModule');
+            var ddlCompany = document.getElementById('ddlContextCompany');
+            var ddlYear = document.getElementById('ddlContextYear');
+            var btnLoadContextEl = document.getElementById('btnLoadContext');
+
+            function loadCompanies() {
+                $.getJSON('@Url.Action("GetCompanies", "UserAccess")', { module: ddlModule.value }, function (companies) {
+                    populateSelect(ddlCompany, companies, 'No companies');
+                    loadYears();
+                });
+            }
+                function loadYears() {
+                    var selectedValue = ddlCompany.value;
+                    var selectedText = ddlCompany.selectedIndex >= 0 ? ddlCompany.options[ddlCompany.selectedIndex].text : '';
+                    if (selectedValue || selectedValue.trim() !== "") {
+                        $.getJSON('@Url.Action("GetYears", "UserAccess")', { module: ddlModule.value, company: selectedText }, function (years) {
+                            populateSelect(ddlYear, years, 'No years');
+                            resetTreeToPlaceholder();
+                            //updateLoadButtonVisibility();
+                        });
+                    }
+            }
+
+            ddlModule.addEventListener('change', loadCompanies);
+            ddlCompany.addEventListener('change', loadYears);
+                ddlYear.addEventListener('change', function () {
+                var selectedModul = ddlModule.value;
+                var selectedCompany = ddlCompany.value;
+                    var selectedYr = ddlYear.value;
+
+                if (selectedYr || selectedYr.trim() !== "") {
+                 $.getJSON('@Url.Action("CurrentSession", "UserAccess")', {
+                     userOra: currentUserOra, module: ddlModule.value, company: ddlCompany.value, year: ddlYear.value
+                 }).done(function (result) {
+
+                 }).fail(function () {
+                 //    alert('Could not load rights for that Module/Company/Year.');
+                 }).always(function () {
+                     //btn.disabled = !UserAccessTree.isEditable();
+                 });
+                    resetTreeToPlaceholder();
+                    //updateLoadButtonVisibility();
+                }
+             });
+            loadCompanies(); // initial cascade on page load
+
+            document.getElementById('btnLoadContext').addEventListener('click', function () {
+                if (!UserAccessTree.isEditable()) return; // belt-and-suspenders alongside the disabled attribute
+                if (!currentUserOra) { alert('No user selected.'); return; }
+                var btn = this;
+                //btn.disabled = true;
+                $.getJSON('@Url.Action("GetVoucherRights", "UserAccess")', {
+                    userOra: currentUserOra, module: ddlModule.value, company: ddlCompany.value, year: ddlYear.value
+                }).done(function (result) {
+                    if (!result.success) { alert(result.message); return; }
+                    if (treePlaceholder.parentNode) treePlaceholder.parentNode.removeChild(treePlaceholder);
+                    treeData = UserAccessTree.renderTree(treePanel, menuTreeData, result.rights);
+                    UserAccessTree.setEditable(UserAccessTree.isEditable()); // re-apply current mode to the freshly rendered tree
+                    // result.vouchers is available here for a voucher-type grid if/when one is added to this view.
+                    // Get the second button and trigger its click event
+                    const btnExpandAllButton = document.getElementById('btnExpandAll');
+                    if (btnExpandAllButton) {
+                        btnExpandAllButton.click(); // Triggers click event on #btnOther
+                    }
+                }).fail(function () {
+                    alert('Could not load rights for that Module/Company/Year.');
+                }).always(function () {
+
+                });
+
+            });
+
+
+                //=============================//
+              // Global array to store voucher rights selected by the user
+        var currentVoucherRights = [];
+
+        // Function to fetch voucher rights from controller
+        function loadVoucherRights() {
+            if (!ddlModule.value || !ddlCompany.value) return;
+
+            $.getJSON('@Url.Action("GetVoucherRights", "UserAccess")', {
+                userOra: currentUserOra, module: ddlModule.value, company: ddlCompany.value, year: ddlYear.value
+            })
+            .done(function (result) {
+                if (result.success) {
+                    currentVoucherRights = result.vouchers || [];
+                    renderVoucherGrid(currentVoucherRights);
+                } else {
+                    alert('Failed to load voucher rights: ' + result.message);
+                }
+            })
+            .fail(function () {
+                console.error('Error fetching voucher rights.');
+            });
+        }
+
+        // Function to populate the modal grid
+        function renderVoucherGrid(vouchers) {
+            var $tbody = $('#voucherGridBody').empty();
+            var allChecked = vouchers.length > 0;
+
+            vouchers.forEach(function (v, index) {
+                //if (!v.IsAllowed) allChecked = false;
+                if (!v.Selected)
+                    allChecked = false;
+                if (v.Selected)
+                    allChecked = true;
+
+                var row = '<tr>' +
+                    '<td class="marker-col">' + (index + 1) + '</td>' +
+                    '<td>' + v.Type + '</td>' +
+                    '<td>' + v.DescOra + '</td>' +
+                    '<td class="allow-col">' +
+                    '<input type="checkbox" class="chk-voucher" data-type="' + v.Type + '" ' + (v.Selected ? 'checked' : '') + ' />' +
+                    '</td>' +
+                    '</tr>';
+                $tbody.append(row);
+            });
+
+            $('#voucherSelectAll').prop('checked', allChecked);
+        }
+
+        // ---- Event Listeners ----
+
+        // 1. Open Voucher Modal when the Voucher toggle button is clicked
+        $('#btnVoucher').on('click', function () {
+            loadVoucherRights();
+            $('#voucherModalOverlay').css('display', 'flex');
+        });
+
+        // 2. Close Modal on 'Ok'
+        $('#voucherLinkOk').on('click', function () {
+            // Sync UI selection back to array
+            $('#voucherGridBody tr').each(function () {
+                var vouchType = $(this).find('.chk-voucher').data('type');
+                var isChecked = $(this).find('.chk-voucher').is(':checked');
+
+                var target = currentVoucherRights.find(v => v.VouchType === vouchType);
+                if (target) {
+                    target.IsAllowed = isChecked;
+                }
+            });
+
+            $('#voucherModalOverlay').hide();
+        });
+
+        // 3. Select All Checkbox Handler
+        $('#voucherSelectAll').on('change', function () {
+            var isChecked = $(this).is(':checked');
+            $('.chk-voucher').prop('checked', isChecked);
+        });
+
+        // 4. Update "Select All" checkbox state when individual checkboxes change
+        $(document).on('change', '.chk-voucher', function () {
+            var total = $('.chk-voucher').length;
+            var checked = $('.chk-voucher:checked').length;
+            $('#voucherSelectAll').prop('checked', total === checked);
+        });
+
+
+        // Global memory state for assigned units
+        var currentUnitRights = [];
+
+        // Fetch unit rights from the server
+        function loadUnitRights(callback) {
+            if (!currentUserOra) {
+                if (callback) callback();
+                return;
+            }
+
+            $.getJSON('@Url.Action("GetAssignedUnits", "UserAccess")', { userOra: currentUserOra, module: ddlModule.value, company: ddlCompany.value, year: ddlYear.value })
+                .done(function (result) {
+                    if (result.success) {
+                        currentUnitRights = result.data || [];
+                        renderUnitGrid(currentUnitRights);
+                    } else {
+                        alert('Failed to load unit rights: ' + result.message);
+                    }
+                })
+                .fail(function () {
+                    alert('Could not retrieve unit list. Check network or server configuration.');
+                })
+                .always(function () {
+                    if (callback) callback();
+                });
+        }
+
+        // Populate unit table dynamically
+        function renderUnitGrid(units) {
+            var $tbody = $('#unitGridBody').empty();
+
+            if (!units || units.length === 0) {
+                $tbody.append('<tr><td colspan="4" style="text-align:center;">No unit master records found.</td></tr>');
+                $('#unitSelectAll').prop('checked', false).prop('disabled', true);
+                return;
+            }
+
+            var isEditable = UserAccessTree.isEditable();
+            var allChecked = true;
+            debugger;
+            units.forEach(function (u, index) {
+                if (!u.IsAssigned) allChecked = false;
+
+                var row = '<tr>' +
+                    '<td class="marker-col">' + (index + 1) + '</td>' +
+                    '<td>' + (u.UnitCode || '') + '</td>' +
+                    '<td>' + (u.UnitName || '') + '</td>' +
+                    '<td class="allow-col">' +
+                        '<input type="checkbox" class="chk-unit" data-code="' + u.UnitCode + '" ' +
+                        (u.IsAssigned ? 'checked="checked"' : '') +
+                        (!isEditable ? ' disabled="disabled"' : '') + ' />' +
+                    '</td>' +
+                    '</tr>';
+                $tbody.append(row);
+            });
+
+            $('#unitSelectAll')
+                .prop('checked', allChecked)
+                .prop('disabled', !isEditable);
+        }
+
+        // ---- Unit Modal Events ----
+
+        // Open modal and load data
+        $('#btnUnit').on('click', function () {
+            loadUnitRights(function () {
+                $('#unitModalOverlay').css('display', 'flex');
+            });
+        });
+
+        // Sync UI checks back to in-memory array & close modal
+        $('#unitLinkOk').on('click', function () {
+            $('#unitGridBody tr').each(function () {
+                var $chk = $(this).find('.chk-unit');
+                var code = $chk.data('code');
+                if (code) {
+                    var target = currentUnitRights.find(function (u) { return u.UnitCode === code; });
+                    if (target) {
+                        target.IsAssigned = $chk.is(':checked');
+                    }
+                }
+            });
+
+            $('#unitModalOverlay').hide();
+        });
+
+        // "Select All" toggle
+        $('#unitSelectAll').on('change', function () {
+            var isChecked = $(this).is(':checked');
+            $('.chk-unit:not(:disabled)').prop('checked', isChecked);
+        });
+
+        // Sync "Select All" when individual checkboxes change
+        $(document).on('change', '.chk-unit', function () {
+            var total = $('.chk-unit').length;
+            var checked = $('.chk-unit:checked').length;
+            $('#unitSelectAll').prop('checked', total > 0 && total === checked);
+        });
+
+            </script>*@
+</body>
+</html>

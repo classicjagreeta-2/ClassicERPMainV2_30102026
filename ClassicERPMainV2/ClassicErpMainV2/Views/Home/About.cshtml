@@ -1,0 +1,717 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Inputpicker Checkbox Multi-Select</title>
+
+    <link href="~/libraries/Multi-column-Dropdown-Plugin-jQuery-Inputpicker/jquery.inputpicker.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="~/libraries/Multi-column-Dropdown-Plugin-jQuery-Inputpicker/jquery.inputpicker.js"></script>
+    <style>
+        .inputpicker-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+        }
+
+        .inputpicker-wrapped {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #fff;
+            padding: 6px 10px;
+            cursor: pointer;
+        }
+
+        .inputpicker-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .inputpicker-wrapped-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-top: 2px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .inputpicker-search {
+            padding: 6px;
+            background: #f7f7f7;
+            border-bottom: 1px solid #eee;
+        }
+
+            .inputpicker-search input {
+                width: 100%;
+                padding: 5px 8px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                box-sizing: border-box;
+            }
+
+        .inputpicker-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .inputpicker-table th,
+            .inputpicker-table td {
+                padding: 8px 10px;
+                text-align: left;
+                border-bottom: 1px solid #f0f0f0;
+            }
+
+            .inputpicker-table th {
+                background: #fafafa;
+                font-weight: bold;
+                color: #333;
+            }
+
+            .inputpicker-table tbody tr {
+                cursor: pointer;
+            }
+
+                .inputpicker-table tbody tr:hover {
+                    background-color: #f5f5f5;
+                }
+
+                .inputpicker-table tbody tr.selected {
+                    background-color: #e6f7ff;
+                }
+
+        .inputpicker-cell-check {
+            width: 30px;
+            text-align: center !important;
+        }
+
+            .inputpicker-cell-check input[type="checkbox"] {
+                cursor: pointer;
+                margin: 0;
+            }
+
+        .inputpicker-no-data {
+            text-align: center;
+            color: #999;
+            padding: 15px !important;
+        }
+        /* Fix Search Box to Top of Dropdown */
+        .inputpicker-wrapped-list .inputpicker-search {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #fff;
+        }
+
+        /* Fix Table Column Headers to Top */
+        .inputpicker-table thead th {
+            position: sticky;
+            top: 35px; /* Offset below the search box height */
+            z-index: 9;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        /* Container for the loading spinner inside the dropdown */
+        .inputpicker-loading {
+            padding: 12px;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            background: #fff;
+            border-top: 1px solid #eee;
+        }
+
+        /* Animated CSS Spinner */
+        .inputpicker-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+            vertical-align: middle;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff; /* Accent color */
+            border-radius: 50%;
+            animation: ip-spin 0.8s linear infinite;
+        }
+
+        @@keyframes ip-spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    @using (Html.BeginForm("SubmitSelection", "Home", FormMethod.Post))
+    {
+        <div style="width: 400px; margin: 40px auto;">
+            <label><strong>Select Employees (Multiple with Checkboxes):</strong></label>
+            <input type="text" id="demo-picker" name="selectedDocNo" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    }
+
+    <script>
+        $(document).ready(function () {
+            var sampleData = [
+                { id: 1, name: 'John Doe', dept: 'Engineering', role: 'Developer' },
+                { id: 2, name: 'Jane Smith', dept: 'Design', role: 'UI/UX Designer' },
+                { id: 3, name: 'Mike Johnson', dept: 'Marketing', role: 'Manager' },
+                { id: 4, name: 'Emily Davis', dept: 'Engineering', role: 'QA Engineer' }
+            ];
+
+            $('#demo-picker').inputpicker({
+                //data: sampleData,
+                url: 'getData',
+                urlParam: {
+                    Param1: "222",
+                    Param2: "wwes",
+                },
+                fieldValue: 'Id', // or 'Id'
+                fieldText: 'DocNo',
+                fields: [
+                    { name: 'Id', text: 'Id', width: '20%' },
+                    { name: 'DocNo', text: 'Doc No', width: '20%' },
+                    { name: 'UnitName', text: 'Unit Name', width: '30%' },
+                    { name: 'PartyName', text: 'Party Name', width: '30%' },
+                    { name: 'DocYear', text: 'Year', width: '20%' }
+                ],
+                pageField: '_page',
+                pageLimitField: '_limit',
+                pagination: true,
+                infiniteScroll: true,
+                limit: 10, // Rows per fetch
+                multiple: true,
+                filterOpen: true,
+                delimiter: ','
+            });
+        });
+    </script>
+</body>
+</html>
+
+<script>
+    if (window.jQuery && !jQuery.fn.popover) {
+        jQuery.fn.popover = function () {
+            return this;
+        };
+    }
+</script>
+
+<script>
+    $('#demo').on('change_highlight.inputpicker', function (e) {
+        console.log('Highlighted value:', e.value);
+    });
+</script>
+
+<script>
+    (function ($) {
+        var pluginName = 'inputpicker';
+
+        function Inputpicker(element, options) {
+            this.element = element;
+            this.$element = $(element);
+            this.options = $.extend({}, Inputpicker.DEFAULTS, options);
+            this.init();
+        }
+
+        Inputpicker.DEFAULTS = {
+            url: '',                    // API Endpoint
+            urlParam: {},               // Extra GET query parameters
+            data: [],
+            fields: [],
+            fieldValue: 'id',
+            fieldClass: '',
+            filterOpen: true,
+            multiple: false,
+            minSearchLen: 3,
+            delimiter: ',',
+            responsive: true,
+            width: '100%',
+            pagination: false,
+            pageField: 'p',
+            pageLimitField: 'per_page',
+            pageCountField: 'total',
+            pageCurrent: 1,
+            limit: 10,
+            infiniteScroll: false,      // Enable/disable infinite scroll
+            hasMoreData: true,          // Flag to track if more pages exist
+            loadingMore: false,         // Flag to prevent duplicate trigger requests
+            searchDelay: 300            // Debounce delay for search typing
+        };
+
+        Inputpicker.prototype = {
+            init: function () {
+                var self = this;
+                this.selectedValues = [];
+                this.isAllSelected = false;
+                // Read existing value if any
+                var initialVal = this.$element.val();
+                if (initialVal) {
+                    this.selectedValues = initialVal.split(this.options.delimiter);
+                }
+
+                // Build UI Wrapper
+                this.$element.hide();
+                this.$container = $('<div class="inputpicker-container" />');
+                this.$wrapped = $('<div class="inputpicker-wrapped" />').appendTo(this.$container);
+
+                // Display box
+                this.$input = $('<input type="text" class="inputpicker-input" readonly autocomplete="off" />').appendTo(this.$wrapped);
+
+                // Dropdown List Container
+                this.$list = $('<div class="inputpicker-wrapped-list" style="max-height: 250px; overflow-y: auto;" />').hide().appendTo(this.$container);
+
+                if (this.options.filterOpen) {
+                    // 1. Search container stays pinned vertically (top:0) and stretches horizontally
+                    this.$search = $(
+                        '<div class="inputpicker-search" style="position: sticky; top: 0; left: 0; right: 0; z-index: 20; padding: 6px; background: #fafafa; border-bottom: 1px solid #ddd;">' +
+                        '<div style="position: relative; width: 100%;">' +
+                        '<input type="text" class="inputpicker-search-input" placeholder="Search..." style="width: 100%; box-sizing: border-box; padding: 5px 26px 5px 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 13px;" />' +
+                        '<span class="inputpicker-search-clean" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 16px; color: #888; display: none; line-height: 1; user-select: none;">&times;</span>' +
+                        '</div>' +
+                        '</div>'
+                    ).appendTo(this.$list);
+                }
+                // Table setup
+                this.$table = $('<table class="inputpicker-table"><thead></thead><tbody></tbody></table>').appendTo(this.$list);
+
+                this.$element.after(this.$container);
+
+                this._renderHeader();
+
+                // Load initial data from API or static array
+                if (this.options.url) {
+                    this._fetchApiData('', 1, false);
+                } else {
+                    this._renderBody(this.options.data);
+                }
+
+                this._updateDisplay();
+                this._bindEvents();
+            },
+
+            _renderHeader: function () {
+                var $thead = this.$table.find('thead').empty();
+                var $tr = $('<tr />');
+
+                if (this.options.multiple) {
+                    $tr.append('<th class="inputpicker-cell-check"><input type="checkbox" class="inputpicker-select-all" /></th>');
+                }
+
+                $.each(this.options.fields, function (i, field) {
+                    var text = typeof field === 'string' ? field : (field.text || field.name);
+                    $tr.append($('<th />').text(text));
+                });
+
+                $thead.append($tr);
+            },
+
+            _renderBody: function (data, append) {
+                var self = this;
+                var $tbody = this.$table.find('tbody');
+
+                if (!append) {
+                    $tbody.empty();
+                }
+
+                if (!data || data.length === 0) {
+                    if (!append) {
+                        var colSpan = self.options.fields.length + (self.options.multiple ? 1 : 0);
+                        $tbody.append('<tr><td colspan="' + colSpan + '" class="inputpicker-no-data">No results found</td></tr>');
+                    }
+                    return;
+                }
+
+                $.each(data, function (i, row) {
+                    var rowVal = row[self.options.fieldValue] !== undefined ? row[self.options.fieldValue].toString() : '';
+
+                    // AUTOMATIC INFINITE SCROLL CHECK: If "Select All" is active, auto-select this newly loaded row
+                    if (self.isAllSelected && $.inArray(rowVal, self.selectedValues) === -1) {
+                        self.selectedValues.push(rowVal);
+                    }
+
+                    var isChecked = $.inArray(rowVal, self.selectedValues) !== -1;
+
+                    var $tr = $('<tr class="inputpicker-element" />')
+                        .attr('data-value', rowVal)
+                        .data('value', rowVal)
+                        .data('row', row);
+
+                    if (isChecked) {
+                        $tr.addClass('selected');
+                    }
+
+                    if (self.options.multiple) {
+                        var $tdCheck = $('<td class="inputpicker-cell-check" />');
+                        var $checkbox = $('<input type="checkbox" class="inputpicker-row-checkbox" />')
+                            .prop('checked', isChecked)
+                            .val(rowVal);
+
+                        $tdCheck.append($checkbox);
+                        $tr.append($tdCheck);
+                    }
+
+                    $.each(self.options.fields, function (j, field) {
+                        var fieldName = typeof field === 'string' ? field : field.name;
+                        $tr.append($('<td />').text(row[fieldName] !== undefined ? row[fieldName] : ''));
+                    });
+
+                    $tbody.append($tr);
+                });
+
+                self._syncSelectAll();
+            },
+
+            _fetchApiData: function (query, page, isAppend) {
+                var self = this;
+                if (self.options.loadingMore) return;
+
+                self.options.loadingMore = true;
+
+                // --- SHOW LOADER ---
+                var $loader = self.$list.find('.inputpicker-loading');
+                if ($loader.length === 0) {
+                    $loader = $(
+                        '<div class="inputpicker-loading" style="padding: 8px; text-align: center; color: #666; font-size: 12px; background: #fafafa; border-top: 1px solid #eee;">' +
+                        '<span class="inputpicker-spinner"></span> Loading...' +
+                        '</div>'
+                    ).appendTo(self.$list);
+                }
+                $loader.show();
+
+                var params = $.extend({}, self.options.urlParam, {
+                    q: query || ''
+                });
+
+                // ONLY send 'q' if query is actually typed by the user!
+                if (query && query.trim() !== '') {
+                    params.q = query;
+                }
+
+                if (self.options.pagination) {
+                    params[self.options.pageField] = page;
+                    params[self.options.pageLimitField] = self.options.limit;
+                }
+
+                // 3. Add Pagination Parameters
+                if (self.options.pagination) {
+                    params[self.options.pageField] = page || 1;
+                    params[self.options.pageLimitField] = self.options.limit;
+                }
+
+                $.ajax({
+                    url: self.options.url,
+                    data: params,
+                    dataType: 'json',
+                    success: function (res, status, xhr) {
+                        // Extract the data array (handles flat array vs nested objects)
+                        var fetchedData = Array.isArray(res) ? res : (res.data || res.Data || res.results || res.Results || res.result || res.Result || []);
+
+                        // --- PAGINATION / MORE DATA CHECKING ---
+                        var totalRecordCount = null;
+
+                        // A. Try reading from response body using `pageCountField`
+                        if (res && typeof res === 'object' && !Array.isArray(res)) {
+                            if (res[self.options.pageCountField] || res['Total'] !== undefined) {
+                                totalRecordCount = parseInt(res[self.options.pageCountField] || res['Total'], 10);
+                            }
+                        }
+
+                        // B. Fallback: Try reading from HTTP Header (e.g., X-Total-Count)
+                        if (totalRecordCount === null) {
+                            var headerCount = xhr.getResponseHeader('X-Total-Count');
+                            if (headerCount !== null) {
+                                totalRecordCount = parseInt(headerCount, 10);
+                            }
+                        }
+
+                        // C. Evaluate hasMoreData
+                        if (totalRecordCount !== null) {
+                            var totalLoaded = isAppend ? (self.options.data.length + fetchedData.length) : fetchedData.length;
+                            self.options.hasMoreData = totalLoaded < totalRecordCount;
+                        } else {
+                            // D. Fallback if backend provides no total count: check if fetched length equals limit
+                            self.options.hasMoreData = (fetchedData.length === self.options.limit);
+                        }
+                        // ----------------------------------------
+
+                        if (isAppend) {
+                            self.options.data = self.options.data.concat(fetchedData);
+                        } else {
+                            self.options.data = fetchedData;
+                        }
+
+                        self._renderBody(fetchedData, isAppend);
+                        self._updateDisplay();
+
+                        // --- 5. RENDER / UPDATE TOTAL COUNT FOOTER ---
+                        var $footer = self.$list.find('.inputpicker-total-footer');
+                        if ($footer.length === 0) {
+                            $footer = $(
+                                '<div class="inputpicker-total-footer" style="position: sticky; bottom: 0; left: 0; right: 0; z-index: 20; padding: 6px 12px; background: #f8f9fa; border-top: 1px solid #e0e0e0; font-size: 12px; font-weight: 600; color: #444; text-align: right;"></div>').appendTo(self.$list);
+                        }
+
+                        var currentLoaded = self.options.data.length;
+                        if (totalRecordCount !== null && totalRecordCount > 0) {
+                            $footer.html('Showing ' + currentLoaded + ' of ' + totalRecordCount.toLocaleString() + ' records').show();
+                        } else if (currentLoaded > 0) {
+                            $footer.html('Total Records: ' + currentLoaded).show();
+                        } else {
+                            $footer.html('No records found').show();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Inputpicker API Request Failed:', status, error);
+                        self.options.hasMoreData = false;
+
+                        var $footer = self.$list.find('.inputpicker-total-footer');
+                        if ($footer.length > 0) {
+                            $footer.html('Error loading data').show();
+                        }
+                    },
+                    complete: function () {
+                        // Hide Loader & Release lock
+                        self.$list.find('.inputpicker-loading').hide();
+                        self.options.loadingMore = false;
+                    }
+                });
+            },
+
+            _bindEvents: function () {
+                var self = this;
+
+                // Toggle Dropdown
+                this.$wrapped.on('click', function (e) {
+                    e.stopPropagation();
+                    $('.inputpicker-wrapped-list').not(self.$list).hide();
+                    self.$list.toggle();
+                    if (self.$list.is(':visible') && self.$search) {
+                        self.$search.find('input').focus();
+                    }
+                });
+
+                this.$list.on('click', function (e) {
+                    e.stopPropagation();
+                });
+
+                // Row Selection Click
+                this.$table.on('click', 'tbody tr.inputpicker-element', function (e) {
+                    var $tr = $(this);
+                    //var val = $tr.data('value');
+                    var val = $tr.attr('data-value') !== undefined ? $tr.attr('data-value') : $tr.data('value');
+                    if (val === undefined || val === null) return;
+                    val = val.toString();
+                    var $checkbox = $tr.find('.inputpicker-row-checkbox');
+
+                    if (self.options.multiple) {
+                        if (!$(e.target).is(':checkbox')) {
+                            $checkbox.prop('checked', !$checkbox.prop('checked'));
+                        }
+
+                        var checked = $checkbox.prop('checked');
+                        if (checked) {
+                            $tr.addClass('selected');
+                            if ($.inArray(val, self.selectedValues) === -1) {
+                                self.selectedValues.push(val);
+                            }
+                        } else {
+                            $tr.removeClass('selected');
+                            self.selectedValues = $.grep(self.selectedValues, function (v) {
+                                return v !== val;
+                            });
+                        }
+
+                        self._syncSelectAll();
+                        self._updateDisplay();
+                    } else {
+                        self.selectedValues = [val];
+                        self.$table.find('tbody tr').removeClass('selected');
+                        $tr.addClass('selected');
+                        self._updateDisplay();
+                        self.$list.hide();
+                    }
+                });
+
+                // Select All Checkbox
+                this.$table.on('change', '.inputpicker-select-all', function () {
+                    var isChecked = $(this).prop('checked');
+                    self.isAllSelected = isChecked;
+                    self.$table.find('tbody tr.inputpicker-element').each(function () {
+                        var $tr = $(this);
+                        var val = $tr.data('value').toString();
+                        var $checkbox = $tr.find('.inputpicker-row-checkbox');
+
+                        $checkbox.prop('checked', isChecked);
+                        if (isChecked) {
+                            $tr.addClass('selected');
+                            if ($.inArray(val, self.selectedValues) === -1) {
+                                self.selectedValues.push(val);
+                            }
+                        } else {
+                            $tr.removeClass('selected');
+                            self.selectedValues = $.grep(self.selectedValues, function (v) {
+                                return v !== val;
+                            });
+                        }
+                    });
+                    self._updateDisplay();
+                });
+
+                // Live Search (Static array filter OR Remote API query)
+                if (this.$search) {
+                    var self = this;
+                    var searchTimer;
+                    var $searchInput = this.$search.find('.inputpicker-search-input');
+                    var $searchClean = this.$search.find('.inputpicker-search-clean');
+
+                    // Minimum character threshold for search
+                    var minSearchLen = self.options.minSearchLen || 3;
+
+                    this.$search.find('input').on('keyup input', function () {
+                        var query = $(this).val();
+                        // Show/hide "x" button based on input content
+                        if ($.trim(query) !== '') {
+                            $searchClean.show();
+                        } else {
+                            $searchClean.hide();
+                        }
+                        clearTimeout(searchTimer);
+                        debugger;
+                        // CASE A: User typed 3 or more characters -> Perform Search
+                        if (query.length >= minSearchLen) {
+                            searchTimer = setTimeout(function () {
+                                self.options.pageCurrent = 1;
+                                self._fetchApiData(query, 1, false);
+                            }, self.options.searchDelay || 300);
+                        }
+                        // CASE B: Fewer than 3 characters -> Load initial un-filtered data
+                        else if (query.length === 0) {
+                            searchTimer = setTimeout(function () {
+                                self.options.pageCurrent = 1;
+                                self._fetchApiData('', 1, false);
+                            }, self.options.searchDelay || 300);
+                        }
+                        searchTimer = setTimeout(function () {
+                            if (self.options.url) {
+                                self.options.pageCurrent = 1;
+                                self._fetchApiData(query, 1, false);
+                            } else {
+                                var lowerQuery = query.toLowerCase();
+                                var filtered = $.grep(self.options.data, function (row) {
+                                    var match = false;
+                                    $.each(self.options.fields, function (i, field) {
+                                        var fieldName = typeof field === 'string' ? field : field.name;
+                                        if (row[fieldName] && row[fieldName].toString().toLowerCase().indexOf(lowerQuery) !== -1) {
+                                            match = true;
+                                            return false;
+                                        }
+                                    });
+                                    return match;
+                                });
+                                self._renderBody(filtered, false);
+                            }
+                        }, self.options.searchDelay);
+                    });
+
+                    // 2. Clear button click event
+                    $searchClean.on('click', function (e) {
+                        e.stopPropagation();
+
+                        // Reset input field and hide clear icon
+                        $searchInput.val('').focus();
+                        $searchClean.hide();
+
+                        // Reset pagination and fetch initial data
+                        self.options.pageCurrent = 1;
+                        self._fetchApiData('', 1, false);
+                    });
+                }
+
+                // Infinite Scroll Trigger on $list container
+                if (this.options.infiniteScroll) {
+                    this.$list.on('scroll.inputpicker', function () {
+                        var $this = $(this);
+                        if (!self.options.hasMoreData || self.options.loadingMore) return;
+
+                        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight - 20) {
+                            self.options.pageCurrent += 1;
+                            var currentQuery = self.$search ? self.$search.find('input').val() : '';
+                            self._fetchApiData(currentQuery, self.options.pageCurrent, true);
+                        }
+                    });
+                }
+
+                // Close dropdown when clicking outside
+                $(document).on('click', function () {
+                    self.$list.hide();
+                });
+            },
+
+            _syncSelectAll: function () {
+                if (!this.options.multiple) return;
+                var totalRows = this.$table.find('tbody tr.inputpicker-element').length;
+                var selectedRows = this.$table.find('tbody tr.inputpicker-element.selected').length;
+                var $selectAll = this.$table.find('.inputpicker-select-all');
+
+                if (totalRows > 0 && totalRows === selectedRows) {
+                    $selectAll.prop('checked', true).prop('indeterminate', false);
+                } else if (selectedRows > 0) {
+                    $selectAll.prop('checked', false).prop('indeterminate', true);
+                } else {
+                    $selectAll.prop('checked', false).prop('indeterminate', false);
+                }
+            },
+
+            _updateDisplay: function () {
+                var joinedValue = this.selectedValues.join(this.options.delimiter);
+                this.$element.val(joinedValue).trigger('change');
+
+                var labels = [];
+                var self = this;
+                var firstField = typeof self.options.fields[0] === 'string' ? self.options.fields[0] : self.options.fields[0].name;
+
+                $.each(this.selectedValues, function (i, val) {
+                    $.each(self.options.data, function (j, row) {
+                        if (row[self.options.fieldValue] && row[self.options.fieldValue].toString() === val) {
+                            labels.push(row[firstField]);
+                            return false;
+                        }
+                    });
+                });
+
+                this.$input.val(labels.join(', '));
+            }
+        };
+
+        $.fn[pluginName] = function (options) {
+            return this.each(function () {
+                if (!$.data(this, 'plugin_' + pluginName)) {
+                    $.data(this, 'plugin_' + pluginName, new Inputpicker(this, options));
+                }
+            });
+        };
+
+    })(jQuery);
+</script>

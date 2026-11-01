@@ -1,0 +1,112 @@
+@model ClassicErpMainV2.Areas.UserAccessMvc.Controllers.UserListViewModel
+@{
+    ViewBag.Title = "User Administration — User Rights Listing";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title</title>
+    <link href="~/Areas/UserAccessMvc/Data/useraccess.css" rel="stylesheet" />
+    <script src="~/Areas/UserAccessMvc/Scripts/useraccess-tree.js"></script>
+</head>
+<body class="ua-page">
+
+    <div class="ua-header">
+        <h1>User Administration — User Rights Listing</h1>
+        <div class="ua-header-right">
+            <span>Authentication Server: None</span>
+        </div>
+    </div>
+
+    <div class="ua-body" style="grid-template-columns: 1fr;">
+        <div class="ua-card">
+            <div class="ua-list-toolbar">
+                <input type="text" class="ua-search-input" id="txtSearch" placeholder="Search by user name, name or group..." />
+                <button class="ua-btn-new" id="btnNewUser" type="button">+ New User</button>
+            </div>
+
+            <table class="ua-table">
+                <thead>
+                    <tr>
+                        <th>User Name</th>
+                        <th>Name</th>
+                        <th>Group</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Rights Granted</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="userRows">
+                    @foreach (var u in Model.Users)
+                    {
+                        var pct = u.RightsTotal > 0 ? (int)System.Math.Round(100.0 * u.RightsGranted / u.RightsTotal) : 0;
+                        <tr data-search="@($"{u.UserOra} {u.UserName} {u.GroupName}".ToLowerInvariant())">
+                            <td>@u.UserOra</td>
+                            <td>@u.UserName</td>
+                            <td>@u.GroupName</td>
+                            <td>@(string.IsNullOrWhiteSpace(u.Email) ? "—" : u.Email)</td>
+                            <td>
+                                @if (u.IsActive)
+                                {
+                                    <span class="ua-status-pill ua-status-active"><span class="ua-dot ua-dot-granted"></span> Active</span>
+                                }
+                                else
+                                {
+                                    <span class="ua-status-pill ua-status-inactive"><span class="ua-dot ua-dot-unavailable"></span> Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="ua-rights-cell">
+                                    <div class="ua-progress-track">
+                                        <div class="ua-progress-fill" style="width:@(pct)%;"></div>
+                                    </div>
+                                    <span class="ua-rights-label">@u.RightsGranted/@u.RightsTotal granted</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="ua-row-actions">
+                                    <button class="ua-btn-rights" onclick="location.href='@Url.Action("Index", "UserAccess", new { userOra = u.UserOra })'">Rights</button>
+                                    <button class="ua-btn-delete-row" data-user="@u.UserOra">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        document.getElementById('txtSearch').addEventListener('input', function (e) {
+            var q = e.target.value.trim().toLowerCase();
+            document.querySelectorAll('#userRows tr').forEach(function (row) {
+                var haystack = row.getAttribute('data-search') || '';
+                row.classList.toggle('ua-row-hidden', q !== '' && haystack.indexOf(q) === -1);
+            });
+        });
+
+        document.getElementById('btnNewUser').addEventListener('click', function () {
+            window.location.href = '@Url.Action("Index", "UserAccess", new { isNew = true })';
+        });
+
+        document.querySelectorAll('.ua-btn-delete-row').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var userOra = btn.getAttribute('data-user');
+                if (!confirm('Want to delete user ' + userOra + '?')) return;
+                $.post('@Url.Action("Delete", "UserAccess")', { userOra: userOra })
+                    .done(function (result) {
+                        if (result.success) {
+                            btn.closest('tr').remove();
+                        } else {
+                            alert(result.message);
+                        }
+                    });
+            });
+        });
+    </script>
+</body>
+</html>

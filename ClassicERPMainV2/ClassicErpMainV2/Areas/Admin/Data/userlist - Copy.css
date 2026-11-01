@@ -1,0 +1,508 @@
+﻿
+/* ==========================================================
+   USER ADMINISTRATION LIST
+   File: userlist.css
+   No Bootstrap dependency
+   ========================================================== */
+/* ---------- 1. GLOBAL ---------- */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body.ua-page {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #f4f6fa;
+    color: #1e293b;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 2. EXISTING HEADER ---------- */
+
+/*
+   Deliberately do not define .ua-header here.
+   Your existing header CSS remains unchanged.
+*/
+
+/* ---------- 3. PAGE CONTENT ---------- */
+
+.ua-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px 20px;
+    overflow: hidden;
+}
+
+/* ---------- 4. LIST CARD ---------- */
+
+.ua-card {
+    min-width: 0;
+    min-height: 0;
+    background: #ffffff;
+    border: 1px solid #e3e9f1;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.025), 0 8px 24px rgba(15, 23, 42, 0.035);
+}
+
+    .ua-card:has(.ua-table) {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+/* ---------- 5. SEARCH TOOLBAR ---------- */
+
+.ua-list-toolbar {
+    position: relative;
+    z-index: 6;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 16px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #edf0f5;
+}
+
+/* Search container */
+
+.ua-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 440px;
+    min-width: 0;
+}
+
+/* Magnifying glass */
+
+.ua-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    border: 1.7px solid #8997aa;
+    border-radius: 50%;
+    font-size: 0;
+    pointer-events: none;
+    transition: border-color 0.2s ease;
+}
+
+    .ua-search-icon::after {
+        content: "";
+        position: absolute;
+        right: -4px;
+        bottom: -2px;
+        width: 6px;
+        height: 1.7px;
+        border-radius: 2px;
+        background: #8997aa;
+        transform: rotate(45deg);
+        transform-origin: center;
+    }
+
+/* Search field */
+
+.ua-search-input {
+    display: block;
+    width: 100%;
+    height: 42px;
+    padding: 0 14px 0 40px;
+    border: 1px solid #dfe5ee;
+    border-radius: 9px;
+    outline: none;
+    background: #f8fafc;
+    color: #1e293b;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 400;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .ua-search-input::placeholder {
+        color: #98a4b5;
+        opacity: 1;
+    }
+
+    .ua-search-input:hover {
+        border-color: #c6d1df;
+        background: #ffffff;
+    }
+
+    .ua-search-input:focus {
+        border-color: #6698f5;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.11);
+    }
+
+.ua-search-wrap:focus-within .ua-search-icon {
+    border-color: #3478f6;
+}
+
+    .ua-search-wrap:focus-within .ua-search-icon::after {
+        background: #3478f6;
+    }
+
+/* ---------- 6. NEW USER BUTTON ---------- */
+
+.ua-btn-new {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-width: 128px;
+    height: 42px;
+    padding: 0 17px;
+    border: 1px solid #2563eb;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #3478f6, #245ce5);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 2px 5px rgba(37, 99, 235, 0.15);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+    .ua-btn-new span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 19px;
+        height: 19px;
+        border: 1px solid rgba(255, 255, 255, 0.45);
+        border-radius: 5px;
+        font-size: 17px;
+        font-weight: 400;
+        line-height: 1;
+    }
+
+    .ua-btn-new:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        box-shadow: 0 4px 10px rgba(37, 99, 235, 0.22);
+        transform: translateY(-1px);
+    }
+
+    .ua-btn-new:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .ua-btn-new:focus-visible {
+        outline: 3px solid rgba(59, 130, 246, 0.25);
+        outline-offset: 3px;
+    }
+
+/* ---------- 7. SCROLLABLE TABLE AREA ---------- */
+
+.ua-table-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f8fafc;
+}
+
+    .ua-table-scroll::-webkit-scrollbar {
+        width: 9px;
+        height: 9px;
+    }
+
+    .ua-table-scroll::-webkit-scrollbar-track {
+        background: #f8fafc;
+    }
+
+    .ua-table-scroll::-webkit-scrollbar-thumb {
+        border: 2px solid #f8fafc;
+        border-radius: 10px;
+        background: #cbd5e1;
+    }
+
+        .ua-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+/* ---------- 8. TABLE ---------- */
+
+.ua-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #ffffff;
+    font-size: 13px;
+}
+
+    /* Sticky column headings */
+
+    .ua-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        padding: 14px 15px;
+        background: #f1f5f9;
+        color: #526176;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.45px;
+        line-height: 1.4;
+        text-align: left;
+        text-transform: uppercase;
+        white-space: nowrap;
+        border-bottom: 1px solid #dfe6ef;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+    }
+
+    /* Table body cells */
+
+    .ua-table tbody td {
+        padding: 13px 15px;
+        background: #ffffff;
+        color: #344256;
+        line-height: 1.5;
+        vertical-align: middle;
+        border-bottom: 1px solid #edf1f6;
+        transition: background-color 0.15s ease;
+    }
+
+    .ua-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .ua-table tbody tr:hover td {
+        background: #f5f9ff;
+    }
+
+    /* User ID */
+
+    .ua-table tbody td:first-child {
+        color: #245dcc;
+        font-weight: 600;
+    }
+
+    /* Email wrapping */
+
+    .ua-table tbody td:nth-child(4) {
+        overflow-wrap: anywhere;
+    }
+
+    /* Actions column */
+
+    .ua-table thead th:last-child {
+        text-align: center;
+    }
+
+    .ua-table tbody td:last-child {
+        white-space: nowrap;
+    }
+
+/* ---------- 9. STATUS BADGES ---------- */
+
+.ua-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.ua-status-active {
+    background: #e4f8eb;
+    color: #197341;
+}
+
+.ua-status-inactive {
+    background: #f0f3f7;
+    color: #64748b;
+}
+
+.ua-dot {
+    display: inline-block;
+    flex: 0 0 7px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+
+.ua-dot-granted {
+    background: #20a464;
+}
+
+.ua-dot-unavailable {
+    background: #94a3b8;
+}
+
+/* ---------- 10. RIGHTS PROGRESS BAR ---------- */
+
+.ua-rights-cell {
+    min-width: 160px;
+}
+
+.ua-progress-track {
+    width: 120px;
+    max-width: 100%;
+    height: 5px;
+    margin-bottom: 6px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #e7edf5;
+}
+
+.ua-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #4388fa, #2862e9);
+    transition: width 0.2s ease;
+}
+
+.ua-rights-label {
+    display: inline-block;
+    color: #8290a4;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+/* ---------- 11. ROW ACTION BUTTONS ---------- */
+
+.ua-row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.ua-btn-rights,
+.ua-btn-delete-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 31px;
+    padding: 6px 12px;
+    border: 1px solid;
+    border-radius: 6px;
+    background: #ffffff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ua-btn-rights {
+    border-color: #c9dcff;
+    color: #245dcc;
+}
+
+    .ua-btn-rights:hover {
+        border-color: #a8c7ff;
+        background: #eff6ff;
+    }
+
+.ua-btn-delete-row {
+    border-color: #f4cece;
+    color: #d64444;
+}
+
+    .ua-btn-delete-row:hover {
+        border-color: #f0b4b4;
+        background: #fff4f4;
+    }
+
+    .ua-btn-rights:focus-visible,
+    .ua-btn-delete-row:focus-visible {
+        outline: 3px solid rgba(59, 130, 246, 0.2);
+        outline-offset: 2px;
+    }
+
+/* ---------- 12. SEARCH FILTER ---------- */
+
+.ua-row-hidden {
+    display: none !important;
+}
+
+/* ---------- 13. RESPONSIVE ---------- */
+
+@media (max-width: 900px) {
+    .ua-body {
+        padding: 10px;
+    }
+
+    .ua-table {
+        min-width: 1000px;
+    }
+
+    .ua-list-toolbar {
+        padding: 13px 14px;
+    }
+}
+
+@media (max-width: 560px) {
+    .ua-list-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 11px;
+        padding: 12px;
+    }
+
+    .ua-search-wrap {
+        max-width: none;
+    }
+
+    .ua-btn-new {
+        align-self: flex-start;
+    }
+
+    .ua-table {
+        min-width: 1000px;
+    }
+}
+
+/* ---------- 14. REDUCED MOTION ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+    .ua-search-input,
+    .ua-btn-new,
+    .ua-btn-rights,
+    .ua-btn-delete-row,
+    .ua-progress-fill,
+    .ua-table tbody td {
+        transition: none;
+    }
+}
+
+

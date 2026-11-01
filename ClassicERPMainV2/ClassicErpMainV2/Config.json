@@ -1,0 +1,31 @@
+[
+  {
+    "projectName": "Finance",
+    "hosturl": "https://localhost:44349/",
+    "redirection": "{0}/Module/CompanySelection?code={1}&controlschema={2}&menuschema={3}&sortby={4}&mname={5}&UserName={6}&LastLoginDt={7}&Password={8}",
+    "authUrl": "Users/authenticate",
+    "dbtype": "ORACLE", //select one database type from SQL OR ORACLE,
+    "isSubDomain": true,
+    "modulecode": [ "FN" ]
+  },
+  {
+    "projectName": "Payroll",
+    "hosturl": "http://localhost:00000/",
+    "redirection": "Module/CompanySelection",
+    "authUrl": "Users/authenticate",
+    "dbtype": "SQL", //select one database type from SQL OR ORACLE,
+    "isSubDomain": true,
+    "modulecode": [ "HP" ]
+  },
+  {
+    "hosturl": "http://localhost:00000/",
+    "redirection": "Module/CompanySelection",
+    "isSubDomain": false,
+    "modulecode": [ "TA" ]
+  },
+  {
+    "hosturl": "https://localhost:00000/",
+    "redirection": "Module/CompanySelection",
+    "modulecode": [ "TV" ]
+  }
+]

@@ -1,0 +1,247 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - Admin Portal</title>
+    <!-- Favicon icon -->
+    <link rel="icon" href="\Content\libraries\assets\images\favicon.ico" type="image/x-icon">
+    <link href="~/libraries/msg/jquery-confirm.min.css" rel="stylesheet" />
+    <!-- Tailwind CSS with Light Blue & Royal Accents Config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        navy: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            700: '#334155',
+                            800: '#1e293b',
+                            850: '#0f172a',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons & Chart.js -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="~/libraries/msg/jquery-confirm.min.js"></script>
+
+    <style>
+        /* Custom Light Blue Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #2563eb;
+            }
+    </style>
+</head>
+<body class="h-full bg-slate-100 text-slate-800 font-sans antialiased flex flex-col md:flex-row overflow-hidden">
+
+    <!-- ============ MOBILE TOP HEADER (VISIBLE ON MOBILE ONLY) ============ -->
+    <div class="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shrink-0 z-30 shadow-sm">
+        <a href="@Url.Action("Index", "Home", new { area = "Admin" })" class="flex items-center gap-2.5">
+            <div class="w-8 h-8 bg-white rounded-full p-1 flex items-center justify-center shrink-0 border border-slate-200 shadow-sm">
+                <img src="~/Areas/Admin/Data/lg.png" alt="Logo" class="w-full h-full object-contain" />
+            </div>
+            <span class="font-bold text-sm text-slate-900 tracking-tight">Admin Portal</span>
+        </a>
+        <button type="button" id="btnToggleMobileSidebar" onclick="toggleMobileSidebar()" class="p-2 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 focus:outline-none">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+    </div>
+
+    <!-- ============ BACKDROP OVERLAY (MOBILE ONLY) ============ -->
+    <div id="sidebarBackdrop"
+         class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden md:hidden transition-opacity duration-300 opacity-0"
+         onclick="closeMobileSidebar()"></div>
+
+    <!-- ============ SIDEBAR DRAWER ============ -->
+    <aside id="sidebarDrawer"
+           class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 h-full transition-transform duration-300 ease-in-out -translate-x-full md:translate-x-0 md:static md:z-auto shadow-lg md:shadow-none">
+
+        <div>
+            <!-- Brand / Logo Header -->
+            <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+                <a href="@Url.Action("Index", "Home", new { area = "Admin" })" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-white rounded-full p-1.5 flex items-center justify-center shrink-0 shadow-md border border-slate-200">
+                        <img src="~/Areas/Admin/Data/lg.png" alt="Logo" class="w-full h-full object-contain" />
+                    </div>
+                    <div>
+                        <div class="flex items-center">
+                            <span class="font-bold text-base text-slate-900 tracking-tight group-hover:text-brand-600 transition-colors">Admin Portal</span>
+                            <span class="ml-1.5 text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-brand-50 text-brand-700 border border-brand-200 font-semibold">Admin</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500 font-medium">SaaS System Control</p>
+                    </div>
+                </a>
+
+                <!-- Close Button (Mobile) -->
+                <button type="button" onclick="closeMobileSidebar()" class="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-3 space-y-1" id="sidebarNav">
+                <!-- Dashboard -->
+                <a href="@Url.Action("Index", "Home")" onclick="setActiveNav('dashboard')" id="nav-dashboard"
+                   class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-brand-600 hover:bg-brand-50/60 border border-transparent transition-all group">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-brand-600 group-hover:scale-110 transition-transform"></i>
+                    <span>Dashboard</span>
+                </a>
+                <!-- Company Licenses -->
+                <a href="@Url.Action("Index", "SaaSManagement")" onclick="setActiveNav('licenses')" id="nav-licenses"
+                   class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-brand-600 hover:bg-brand-50/60 border border-transparent transition-all group">
+                    <i data-lucide="key-round" class="w-4 h-4 text-brand-600 group-hover:scale-110 transition-transform"></i>
+                    <span>Company Licenses</span>
+                </a>
+
+                <!-- User Jag Details -->
+                <a href="@Url.Action("List", "UserAccess")" onclick="setActiveNav('userjag')" id="nav-userjag"
+                   class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-brand-600 hover:bg-brand-50/60 border border-transparent transition-all group">
+                    <i data-lucide="users" class="w-4 h-4 text-brand-600 group-hover:scale-110 transition-transform"></i>
+                    <span>User Access Control</span>
+                </a>
+
+                <!-- User Access Control -->
+                @*<a href="@Url.Action("List", "UserAccess")" onclick="setActiveNav('useraccess')" id="nav-useraccess"
+                   class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-brand-600 hover:bg-brand-50/60 border border-transparent transition-all group">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-brand-600 group-hover:scale-110 transition-transform"></i>
+                    <span>User Access Control</span>
+                </a>*@
+            </nav>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="p-3 border-t border-slate-200 bg-slate-50/80">
+            <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 shadow-sm gap-2">
+
+                <!-- User Metadata Container -->
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm border border-brand-500">
+                        @(User.Identity.IsAuthenticated ? User.Identity.Name.Substring(0, 1).ToUpper() : "A")
+                    </div>
+                    <div class="min-w-0 truncate">
+                        <p class="text-xs font-bold text-slate-800 truncate">@(User.Identity.IsAuthenticated ? User.Identity.Name : "Admin User")</p>
+                        <p class="text-[10px] text-brand-600 font-semibold truncate">System Administrator</p>
+                    </div>
+                </div>
+
+                <!-- Form POST Logout Button -->
+                @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { id = "logoutForm", @class = "inline-flex shrink-0" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 flex items-center justify-center border border-transparent hover:border-rose-100" title="Logout">
+                        <i data-lucide="log-out" class="w-4 h-4 shrink-0"></i>
+                    </button>
+                }
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Body -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100">
+        <main class="flex-1 overflow-y-auto p-2 sm:p-4">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Ensure Lucide Icons Initialize On Render -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+    <!-- Full Blue Selection & Persistence Script -->
+    <script>
+        // Classes for active full blue button vs inactive item
+        const ACTIVE_BLUE_CLASSES = ["bg-brand-600", "text-white", "shadow-lg", "shadow-brand-600/25", "border-brand-500/40"];
+        const INACTIVE_CLASSES = ["text-slate-300", "hover:text-white", "hover:bg-navy-800/80", "border-transparent"];
+        //const ACTIVE_NAV_CLASSES = ["bg-brand-600", "text-white", "shadow-md", "shadow-brand-500/20"];
+        //const INACTIVE_NAV_CLASSES = ["text-slate-600", "hover:text-brand-600", "hover:bg-brand-50/60"];
+       
+        function setActiveNav(menuKey) {
+            // 1. Save selected key to localStorage
+            localStorage.setItem('selectedAdminMenu', menuKey);
+
+            // 2. Reset all buttons to inactive neutral style
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove(...ACTIVE_BLUE_CLASSES);
+                btn.classList.add(...INACTIVE_CLASSES);
+
+                // Set icon back to accent color
+                const icon = btn.querySelector('[data-lucide], svg');
+                if (icon) {
+                    icon.classList.remove('text-white');
+                    icon.classList.add('text-brand-500');
+                }
+            });
+
+            // 3. Highlight full clicked button with deep blue
+            const activeBtn = document.getElementById('nav-' + menuKey);
+            if (activeBtn) {
+                activeBtn.classList.remove(...INACTIVE_CLASSES);
+                activeBtn.classList.add(...ACTIVE_BLUE_CLASSES);
+
+                // Set icon inside active button to white
+                const activeIcon = activeBtn.querySelector('[data-lucide], svg');
+                if (activeIcon) {
+                    activeIcon.classList.remove('text-brand-500');
+                    activeIcon.classList.add('text-white');
+                }
+            }
+
+            // 4. Trigger tab/view switch if function exists
+            if (typeof switchTab === 'function') {
+                switchTab(menuKey);
+            }
+
+            // 5. Close drawer on mobile view
+            if (typeof closeMobileSidebar === 'function') {
+                closeMobileSidebar();
+            }
+        }
+
+        // Auto-select and stay on the active page/tab upon reload
+        document.addEventListener("DOMContentLoaded", function () {
+            debugger;
+            const savedMenu = localStorage.getItem('selectedAdminMenu') || 'useraccess';
+            setActiveNav(savedMenu);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+﻿@model ClassicErpMainV2.Areas.Admin.Controllers.SystemConfigViewModel
+@{
+    Layout = null; // Standalone page
+}
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100 text-slate-800">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Configuration - Admin Portal</title>
+    <!-- Favicon icon -->
+    <link rel="icon" href="\Content\libraries\assets\images\favicon.ico" type="image/x-icon">
+
+    <!-- Tailwind CSS with Brand Palette -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Global CSS for Selection & Autofill Override -->
+    <style>
+        input::selection,
+        textarea::selection,
+        select::selection {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+        }
+
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #0f172a !important;
+            -webkit-box-shadow: 0 0 0px 1000px #f8fafc inset !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+    </style>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="h-full bg-slate-100 flex items-center justify-center p-4 font-sans text-slate-800 antialiased selection:bg-brand-600 selection:text-white">
+
+    <div class="w-full">
+        <div class="space-y-6 max-w-5xl mx-auto p-2 sm:p-4">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                <!-- ============ LEFT COLUMN: MASTER ADMIN FORM ============ -->
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+
+                        <!-- Header -->
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-2">
+                                <div class="p-2 bg-brand-50 text-brand-600 rounded-lg border border-brand-100">
+                                    <i data-lucide="user-check" class="w-4 h-4"></i>
+                                </div>
+                                <h2 class="text-sm font-bold text-slate-900 tracking-wide">Administrator Credentials</h2>
+                            </div>
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">SuperAdmin Level</span>
+                        </div>
+
+                        <!-- Success / Error Alert Messages -->
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2 font-medium">
+                                <i data-lucide="check-circle" class="w-4 h-4 shrink-0 text-emerald-600"></i>
+                                <span>@TempData["SuccessMessage"]</span>
+                            </div>
+                        }
+
+                        @if (ViewBag.ErrorMessage != null)
+                        {
+                            <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-medium">
+                                <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-rose-600"></i>
+                                <span>@ViewBag.ErrorMessage</span>
+                            </div>
+                        }
+
+                        <!-- ASP.NET MVC Form Post -->
+                        @using (Html.BeginForm("SaveSystemConfig", "Account", FormMethod.Post, new { @class = "space-y-3" }))
+                        {
+                            @Html.AntiForgeryToken()
+
+                            <!-- Admin Username -->
+                            <div class="space-y-1">
+                                @Html.LabelFor(m => m.MasterUsername, "Admin Username (ORA / ID)", new { @class = "block text-xs font-semibold text-slate-700" })
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                        <i data-lucide="user" class="w-4 h-4"></i>
+                                    </div>
+                                    @Html.TextBoxFor(m => m.MasterUsername, new
+                                    {
+                                        @class = "w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 font-medium selection:bg-brand-600 selection:text-white",
+                                        placeholder = "SYS_ADMIN_01"
+                                    })
+                                </div>
+                                @Html.ValidationMessageFor(m => m.MasterUsername, "", new { @class = "text-[11px] text-rose-600 font-medium" })
+                            </div>
+
+                            <!-- Admin Full Name -->
+                            <div class="space-y-1">
+                                @Html.LabelFor(m => m.MasterFullName, "Administrator Full Name", new { @class = "block text-xs font-semibold text-slate-700" })
+                                @Html.TextBoxFor(m => m.MasterFullName, new
+                                {
+                                    @class = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 font-medium selection:bg-brand-600 selection:text-white",
+                                    placeholder = "System Super Administrator"
+                                })
+                                @Html.ValidationMessageFor(m => m.MasterFullName, "", new { @class = "text-[11px] text-rose-600 font-medium" })
+                            </div>
+
+                            <!-- Passwords -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="space-y-1">
+                                    @Html.LabelFor(m => m.MasterPassword, "Admin Password", new { @class = "block text-xs font-semibold text-slate-700" })
+                                    @Html.PasswordFor(m => m.MasterPassword, new
+                                    {
+                                        @class = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 font-medium selection:bg-brand-600 selection:text-white",
+                                        placeholder = "••••••••••••"
+                                    })
+                                    @Html.ValidationMessageFor(m => m.MasterPassword, "", new { @class = "text-[11px] text-rose-600 font-medium" })
+                                </div>
+
+                                <div class="space-y-1">
+                                    @Html.LabelFor(m => m.MasterPasswordConfirm, "Confirm Password", new { @class = "block text-xs font-semibold text-slate-700" })
+                                    @Html.PasswordFor(m => m.MasterPasswordConfirm, new
+                                    {
+                                        @class = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 font-medium selection:bg-brand-600 selection:text-white",
+                                        placeholder = "••••••••••••"
+                                    })
+                                    @Html.ValidationMessageFor(m => m.MasterPasswordConfirm, "", new { @class = "text-[11px] text-rose-600 font-medium" })
+                                </div>
+                            </div>
+
+                            <!-- Centered Blue Save Submit Button -->
+                            <div class="pt-2 flex items-center justify-center border-t border-slate-100">
+                                <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold transition-all shadow-sm shadow-brand-600/20 flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-1">
+                                    <i data-lucide="save" class="w-3.5 h-3.5 text-white"></i>
+                                    <span>Save</span>
+                                </button>
+                            </div>
+                        }
+
+                        <!-- Password Policy Checklist -->
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] space-y-1.5">
+                            <p class="font-bold text-slate-700 text-[10px] uppercase tracking-wider">Password Requirements Check:</p>
+                            <div class="grid grid-cols-2 gap-1 text-slate-500 font-medium">
+                                <div class="flex items-center gap-1.5 text-emerald-600">
+                                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Minimum 8 Characters
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Forget Password Info Box -->
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] space-y-1.5">
+                            <p class="font-bold text-slate-700 text-[10px] uppercase tracking-wider">Forget Password Procedure:</p>
+                            <div class="gap-1 text-slate-500 font-medium">
+                                <div class="flex items-center gap-1.5  text-emerald-600">
+                                    <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                                    Change ACTIVE_TAG = 'Y' to 'N' from database table SYSUSER, then create new Username and Password
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Init Icons -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            if (window.lucide) lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
