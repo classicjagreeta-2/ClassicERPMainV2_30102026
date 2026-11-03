@@ -133,7 +133,7 @@
 <script>
     debugger;
     var IDLE_LIMIT_SECONDS = @(int.TryParse(System.Configuration.ConfigurationManager.AppSettings["IdleLimitSeconds"], out var sec) ? sec : 1800 ); // 5 minutes (adjust as needed) 300
-    let idleTime = IDLE_LIMIT_SECONDS;
+    let idleTime = 0; // count up from 0 - starting at the limit logged the user out one second after the page opened
 
     $(document).ready(function () {
         debugger;
