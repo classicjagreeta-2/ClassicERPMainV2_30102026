@@ -122,7 +122,7 @@
                                                                 <div class="modal-footer">
 
                                                                     <div class="form-group">
-                                                                        <a href=@Url.Action("Index","Menu") class="btn btn-danger m-r-20">
+                                                                        <a href=@Url.Action("SelectModule","Module") class="btn btn-danger m-r-20">
                                                                             <i class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></i> BACK
                                                                         </a>
                                                                         <a href=@Url.Action("Index","Menu") class="btn btn-primary pull-right">
@@ -151,3 +151,34 @@
         </div>
     </div>
 </div>
+
+
+<script>
+    // Validation: NEXT is blocked until Company, Location and Financial Year are all selected.
+    document.addEventListener('DOMContentLoaded', function () {
+        var next = document.querySelector('.j-content a.btn-primary');
+        if (!next) return;
+        var selects = document.querySelectorAll('.j-content select');
+        Array.prototype.forEach.call(selects, function (s) {
+            var lbl = s.parentNode.querySelector('label');
+            var msg = document.createElement('div');
+            msg.style.cssText = 'display:none;color:#D92D20;font-size:12px;font-weight:600;margin-top:3px;';
+            msg.textContent = 'Please select ' + (lbl ? lbl.textContent.replace(/^Select\s+/i, '') : 'a value') + '.';
+            s.parentNode.appendChild(msg);
+            s._err = msg;
+            s.addEventListener('change', function () {
+                if (s.value) { msg.style.display = 'none'; s.style.borderColor = ''; }
+            });
+        });
+        next.addEventListener('click', function (e) {
+            var firstBad = null;
+            Array.prototype.forEach.call(selects, function (s) {
+                var empty = !s.value || !String(s.value).trim();
+                s._err.style.display = empty ? 'block' : 'none';
+                s.style.borderColor = empty ? '#D92D20' : '';
+                if (empty && !firstBad) firstBad = s;
+            });
+            if (firstBad) { e.preventDefault(); e.stopImmediatePropagation(); firstBad.focus(); }
+        }, true);
+    });
+</script>
