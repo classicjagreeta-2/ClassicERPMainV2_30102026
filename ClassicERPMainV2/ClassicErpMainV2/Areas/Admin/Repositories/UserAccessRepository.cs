@@ -441,7 +441,7 @@ namespace ClassicErpMainV2.Areas.Admin.Data
 
         // ---- save (was SAVE_Click) — one transaction, delete-then-reinsert pattern ----
         public void SaveUserAccess(UserAccessRecord record, string encodedPassword, string editedByUser,
-            string loca, string _unitId, bool isEdit)
+            string loca, string _unitId, bool isEdit,string module)
         {
             using (var cnn = Open())
             using (var tx = cnn.BeginTransaction())
@@ -518,26 +518,28 @@ namespace ClassicErpMainV2.Areas.Admin.Data
                     foreach (var r in record.Rights)
                     {
                         Exec(cnn, tx,
-                            $@"INSERT INTO {_schemaPrefix}.{_usracsTablePrefix} (UID_ORA, MNUID, INDEX_ORA, AEDV, EDAY, ADAY, DDAY, SCHEMA_NM)
-                               VALUES (@id, @mnu, @idx, @aedv, @eday, @aday, @p_dday, @unit)",
+                            $@"INSERT INTO {_schemaPrefix}.{_usracsTablePrefix} (LOCA,UID_ORA, MNUID, INDEX_ORA, AEDV, EDAY, ADAY, DDAY, SCHEMA_NM,USER_NAME,OS_USER,TERMINAL_ID)
+                               VALUES (@loca,@id, @mnu, @idx, @aedv, @eday, @aday, @p_dday, @unit,@user_name,@os_user,@terminal_id)",("@loca",loca),
                             ("@id", record.UserOra), ("@mnu", r.MnuId), ("@idx", r.IndexOra), ("@aedv", r.Aedv),
-                            ("@eday", r.EditLockDays), ("@aday", r.AddLockDays), ("@p_dday", r.DeleteLockDays), ("@unit", _unitId));
+                            ("@eday", r.EditLockDays), ("@aday", r.AddLockDays), ("@p_dday", r.DeleteLockDays), ("@unit", _unitId),("@user_name", record.UserOra),("@os_user", record.UserOra),("@terminal_id", record.UserOra));
                     }
-                    if (isEdit)
+                    if (module == "FN")
                     {
-                        if (!string.IsNullOrEmpty(_schemaPrefix))
+                        if (isEdit)
                         {
-                            Exec(cnn, tx, $"DELETE FROM {_schemaPrefix}.MAST_VOU_RIGHT WHERE UID_ORA=@id", ("@id", record.UserOra));
+                            if (!string.IsNullOrEmpty(_schemaPrefix))
+                            {
+                                Exec(cnn, tx, $"DELETE FROM {_schemaPrefix}.MAST_VOU_RIGHT WHERE UID_ORA=@id", ("@id", record.UserOra));
+                            }
+                        }
+                        foreach (var v in record.VoucherRights.Where(v => v.Selected))
+                        {
+                            Exec(cnn, tx,
+                                $@"INSERT INTO {_schemaPrefix}.MAST_VOU_RIGHT (LOCA, UID_ORA, VOU_TYPE, USER_NAME, USER_ENTDT)
+                              VALUES (@loca, @id, @p_type, @p_by, @p_d)",
+                                ("@loca", loca), ("@id", record.UserOra), ("@p_type", v.Type), ("@p_by", editedByUser), ("@p_d", now.AddDays(1).Date));
                         }
                     }
-                    foreach (var v in record.VoucherRights.Where(v => v.Selected))
-                    {
-                        Exec(cnn, tx,
-                            $@"INSERT INTO {_schemaPrefix}.MAST_VOU_RIGHT (LOCA, UID_ORA, VOU_TYPE, USER_NAME, USER_ENTDT)
-                              VALUES (@loca, @id, @p_type, @p_by, @p_d)",
-                            ("@loca", loca), ("@id", record.UserOra), ("@p_type", v.Type), ("@p_by", editedByUser), ("@p_d", now.AddDays(1).Date));
-                    }
-
                     tx.Commit();
                 }
                 catch (Exception ex)

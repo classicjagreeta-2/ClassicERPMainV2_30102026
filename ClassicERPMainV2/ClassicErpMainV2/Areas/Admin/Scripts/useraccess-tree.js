@@ -62,7 +62,8 @@
             return STATE.GRANTED;
         }
 
-        return STATE.DENIED;
+        // Parent / Section nodes exist in USRACS with empty AEDV
+        return STATE.GRANTED;
     }
 
     function refreshLeafDots(leafNode) {
@@ -320,10 +321,13 @@
     function paintStateUp(node) {
         var parent = node._parent;
         if (!parent) return;
-        var allChildrenGranted = (parent.Children || []).every(function (child) {
-            return child._state === STATE.GRANTED || child._state === STATE.UNAVAILABLE;
+
+        // Parent turns GRANTED if at least one direct child is GRANTED
+        var anyChildGranted = (parent.Children || []).some(function (child) {
+            return child._state === STATE.GRANTED;
         });
-        var nextState = allChildrenGranted ? STATE.GRANTED : STATE.DENIED;
+
+        var nextState = anyChildGranted ? STATE.GRANTED : STATE.DENIED;
         if (parent._state !== STATE.UNAVAILABLE) {
             parent._state = nextState;
             if (parent._dotEl) {
@@ -333,55 +337,30 @@
         paintStateUp(parent);
     }
 
-    //function paintStateUp(node) {
-    //    var parent = node._parent;
-    //    if (!parent) return;
-    //    // Parent turns GRANTED if ALL direct children are GRANTED (or UNAVAILABLE)
-    //    var allChildrenGranted = (parent.Children || []).every(function (child) {
-    //        return child._state === STATE.GRANTED || child._state === STATE.UNAVAILABLE;
-    //    });
-    //    var nextState = allChildrenGranted ? STATE.GRANTED : STATE.DENIED;
-    //    if (parent._state !== STATE.UNAVAILABLE) {
-    //        parent._state = nextState;
-    //        if (parent._dotEl) {
-    //            parent._dotEl.className = 'ua-dot ua-dot-' + nextState;
-    //        }
-    //    }
-    //    // Continue up the tree
-    //    paintStateUp(parent);
-    //}
-
-    //function paintStateUpx(node) {
-    //    var parent = node._parent;
-    //    if (!parent) return;
-    //    var allGranted = (parent.Children || []).every(function (c) {
-    //        return c._state === STATE.GRANTED || c._state === STATE.UNAVAILABLE;
-    //    });
-    //    var nextState = allGranted ? STATE.GRANTED : STATE.DENIED;
-    //    if (parent._state !== STATE.UNAVAILABLE) {
-    //        parent._state = nextState;
-    //        if (parent._dotEl) parent._dotEl.className = 'ua-dot ua-dot-' + nextState;
-    //    }
-    //    paintStateUp(parent);
-    //}
-
     function updateAllParentStatesOnLoad(treeData) {
-        //walk(treeData, function (node) {
-        //    if (isLeafGroup(node)) {
-        //        node._state = (node._aedv && node._aedv.length > 0) ? STATE.GRANTED : STATE.DENIED;
-        //        if (node._dotEl) {
-        //            node._dotEl.className = 'ua-dot ua-dot-' + node._state;
-        //        }
-        //        paintStateUp(node);
-        //    }
-        //});
+        function resolveNodeState(node) {
+            if (node.Children && node.Children.length > 0 && !isLeafGroup(node)) {
+                // Post-order: resolve children first
+                node.Children.forEach(resolveNodeState);
 
-        walk(treeData, function (node) {
-            // If node is a simple leaf report OR an AEDV leaf group
-            if (!node.Children || node.Children.length === 0 || isLeafGroup(node)) {
-                paintStateUp(node);
+                // Parent is GRANTED if at least one child is GRANTED
+                var anyChildGranted = node.Children.some(function (c) {
+                    return c._state === STATE.GRANTED;
+                });
+                if (node._state !== STATE.UNAVAILABLE) {
+                    node._state = anyChildGranted ? STATE.GRANTED : STATE.DENIED;
+                    if (node._dotEl) {
+                        node._dotEl.className = 'ua-dot ua-dot-' + node._state;
+                    }
+                }
+            } else if (isLeafGroup(node)) {
+                node._state = (node._aedv && node._aedv.length > 0) ? STATE.GRANTED : STATE.DENIED;
+                if (node._dotEl && node._state !== STATE.UNAVAILABLE) {
+                    node._dotEl.className = 'ua-dot ua-dot-' + node._state;
+                }
             }
-        });
+        }
+        treeData.forEach(resolveNodeState);
     }
     function linkParents(nodes, parent) {
         nodes.forEach(function (n) {
@@ -492,35 +471,59 @@
             //}
         });
 
-        treeData.forEach(function (r) { paintStateUp(r); });
+        updateAllParentStatesOnLoad(treeData);
     }
 
     function serializeRights(rootWrapper) {
         var rights = [];
+        var seen = {};
+
         function visit(node) {
-            // 1. Leaf Group with AEDV
+            var key = (node.Id || '') + '!' + (node.IndexOra || '');
+
+            // 1. Leaf Group with AEDV (Type = 'E' / 'E1')
             if (isLeafGroup(node)) {
                 if (node._aedv && node._aedv.length > 0) {
+                    if (!seen[key]) {
+                        seen[key] = true;
+                        rights.push({
+                            mnuId: node.Id,
+                            indexOra: node.IndexOra,
+                            aedv: node._aedv,
+                            addLockDays: Number(node._addLockDays || 0),
+                            editLockDays: Number(node._editLockDays || 0),
+                            deleteLockDays: Number(node._deleteLockDays || 0)
+                        });
+                    }
+                }
+            }
+            // 2. Parent / Section Node with granted children (has children and is GRANTED)
+            else if (node._state === STATE.GRANTED && node.Children && node.Children.length > 0) {
+                if (!seen[key]) {
+                    seen[key] = true;
                     rights.push({
                         mnuId: node.Id,
                         indexOra: node.IndexOra,
-                        aedv: node._aedv,
-                        addLockDays: Number(node._addLockDays || 0),
-                        editLockDays: Number(node._editLockDays || 0),
-                        deleteLockDays: Number(node._deleteLockDays || 0)
+                        aedv: '',
+                        addLockDays: 0,
+                        editLockDays: 0,
+                        deleteLockDays: 0
                     });
                 }
             }
-            // 2. Simple Leaf Node (e.g. Cash Book, Bank Book) granted without AEDV children
+            // 3. Simple Leaf Node (e.g. Cash Book, Bank Book) granted without AEDV children
             else if (node._state === STATE.GRANTED && (!node.Children || node.Children.length === 0)) {
-                rights.push({
-                    mnuId: node.Id,
-                    indexOra: node.IndexOra,
-                    aedv: node._aedv || 'X',
-                    addLockDays: 0,
-                    editLockDays: 0,
-                    deleteLockDays: 0
-                });
+                if (!seen[key]) {
+                    seen[key] = true;
+                    rights.push({
+                        mnuId: node.Id,
+                        indexOra: node.IndexOra,
+                        aedv: node._aedv || 'X',
+                        addLockDays: 0,
+                        editLockDays: 0,
+                        deleteLockDays: 0
+                    });
+                }
             }
 
             (node.Children || []).forEach(visit);

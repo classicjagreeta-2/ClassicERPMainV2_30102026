@@ -132,32 +132,32 @@
 
 <script>
     debugger;
-    var IDLE_LIMIT_SECONDS = @(int.TryParse(System.Configuration.ConfigurationManager.AppSettings["IdleLimitSeconds"], out var sec) ? sec : 1800 ); // 5 minutes (adjust as needed) 300
+    var IDLE_LIMIT_SECONDS = @(int.TryParse(System.Configuration.ConfigurationManager.AppSettings["IdleLimitSeconds"], out var sec) ? sec : 18000000 ); // 5 minutes (adjust as needed) 300
     let idleTime = IDLE_LIMIT_SECONDS;
 
-    $(document).ready(function () {
-        debugger;
-        // Reset timer on user activity
-        $(this).mousemove(resetTimer);
-        $(this).keypress(resetTimer);
-        $(this).click(resetTimer);
-        $(this).scroll(resetTimer);
+    //$(document).ready(function () {
+    //    debugger;
+    //    // Reset timer on user activity
+    //    $(this).mousemove(resetTimer);
+    //    $(this).keypress(resetTimer);
+    //    $(this).click(resetTimer);
+    //    $(this).scroll(resetTimer);
 
-        // Increment timer every second
-        setInterval(timerIncrement, 1000);
-    });
+    //    // Increment timer every second
+    //    setInterval(timerIncrement, 1000);
+    //});
 
-    function resetTimer() {
-        idleTime = 0;
-    }
+    //function resetTimer() {
+    //    idleTime = 0;
+    //}
 
-    function timerIncrement() {
-        idleTime++;
-        if (idleTime >= IDLE_LIMIT_SECONDS) {
-            notifyServerIdle();
-            idleTime = 0; // Reset after notifying to avoid continuous requests
-        }
-    }
+    //function timerIncrement() {
+    //    idleTime++;
+    //    if (idleTime >= IDLE_LIMIT_SECONDS) {
+    //        notifyServerIdle();
+    //        idleTime = 0; // Reset after notifying to avoid continuous requests
+    //    }
+    //}
 
     function notifyServerIdle() {
         $.ajax({

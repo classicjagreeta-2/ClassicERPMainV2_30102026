@@ -602,7 +602,10 @@
                         Children: treeData
                     })
                 },
-                IsNewRecord: isNewUser
+                IsNewRecord: isNewUser,
+                Module: ddlModule ? ddlModule.value : '',
+                Company: ddlCompany ? ddlCompany.value : '',
+                Year: ddlYear ? ddlYear.value : ''
             };
 
             var btn = this;
@@ -758,7 +761,10 @@
                 module: ddlModule.value
             }, function(companies) {
                 populateSelect(ddlCompany, companies, 'No companies');
-                populateSelect(ddlYear, companies, 'No Year');
+                if (companies && companies.length > 0) {
+                    ddlCompany.selectedIndex = 1;
+                }
+                populateSelect(ddlYear, null, 'No Year');
                 loadYears();
             });
         }
@@ -773,7 +779,10 @@
                 }, function (years) {
                     populateSelect(ddlYear, years, 'No years');
                     resetTreeToPlaceholder();
-                    //updateLoadButtonVisibility();
+                    if (years && years.length > 0) {
+                        ddlYear.selectedIndex = 1;
+                        $(ddlYear).trigger('change');
+                    }
                 });
             }
             else {

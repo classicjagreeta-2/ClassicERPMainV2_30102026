@@ -92,24 +92,52 @@ namespace ClassicErpMainV2.Areas.UserAccessMvc.Controllers
         {
             if (!string.IsNullOrWhiteSpace(userOra) && !string.IsNullOrWhiteSpace(module) && !string.IsNullOrWhiteSpace(company) && !string.IsNullOrWhiteSpace(year))
             {
-                _repo._schemaPrefix = year;
-                Session["Loca"] = company;
-                if (string.IsNullOrWhiteSpace(userOra))
-                    return Json(new { success = false, message = "No user selected." }, JsonRequestBehavior.AllowGet);
-
-                string schemaPrefix = year; // UserAccessRepository.ComposeSchemaPrefix(module, company, year);
-                                            //var contextRepo = _repo.ForSchema(schemaPrefix);
-
                 try
                 {
+                    var getClassicControlList = _repo.LoadClassicControlForModule(module);
+                    var getModules = _repo.LoadModules().FirstOrDefault(k => k.MODULE_CODE == module);
+                    var getControl = getClassicControlList.FirstOrDefault(k => k.Module == module && k.LOCA == company && k.USR_ID == year);
+
+                    Session["USER_ORA"] = userOra;
+                    Session["MODULE_CODE"] = module;
+                    Session["LOCA"] = company;
+                    Session["SCHEMA"] = year;
+
+                    if (getModules != null)
+                    {
+                        Session["MODULE_NAME"] = getModules.MODULE_NAME;
+                        Session["MENU_TABLE"] = getModules.MENU_TABLE;
+                        Session["USRACS_TABLE"] = getModules.USRACS_TABLE;
+                        Session["UNIT_TABLE"] = getModules.UNIT_TABLE;
+                        Session["UNIT_FIELD"] = getModules.UNIT_FIELD;
+                    }
+                    if (getControl != null)
+                    {
+                        Session["COMPANY"] = getControl.NAME;
+                        Session["FINANCIAL_YEAR"] = getControl.YR;
+                    }
+
+                    _repo.SetContextPrefix(
+                        //year,
+                        getModules?.MENU_TABLE ?? "",
+                        getModules?.USRACS_TABLE ?? "",
+                        getModules?.UNIT_FIELD ?? "",
+                        getModules?.UNIT_TABLE ?? "",
+                        getModules?.MODULE_NAME ?? "",
+                        module
+                    );
+
+                    var menuRights = _repo.LoadMenuTree();
                     var rights = _repo.LoadUserRights(userOra);
-                    var vouchers = _repo.LoadVoucherRights(userOra, CurrentLocation());
-                    return Json(new { success = true, rights, vouchers }, JsonRequestBehavior.AllowGet);
+                    if (module == "FN" || module == "FIN" || module == "FINANCE")
+                    {
+                        var vouchers = _repo.LoadVoucherRights(userOra, company);
+                        return Json(new { success = true, rights, vouchers, menuRights }, JsonRequestBehavior.AllowGet);
+                    }
+                    return Json(new { success = true, rights, menuRights }, JsonRequestBehavior.AllowGet);
                 }
                 catch (Exception ex)
                 {
-                    // Most likely cause: the composed schema (module+company+year) doesn't exist —
-                    // ComposeSchemaPrefix's pattern is a guess, see the note on that method.
                     return Json(new { success = false, message = "Could not load rights for that context: " + ex.Message },
                         JsonRequestBehavior.AllowGet);
                 }
@@ -234,7 +262,47 @@ namespace ClassicErpMainV2.Areas.UserAccessMvc.Controllers
 
             try
             {
-                _repo.SaveUserAccess(request.Record, encodedPassword, CurrentUser(), CurrentLocation(), CurrentSchema(), !isNew);
+                string module = !string.IsNullOrWhiteSpace(request.Module) ? request.Module : Session["MODULE_CODE"]?.ToString() ?? "";
+                string company = !string.IsNullOrWhiteSpace(request.Company) ? request.Company : Session["LOCA"]?.ToString() ?? "";
+                string year = !string.IsNullOrWhiteSpace(request.Year) ? request.Year : Session["SCHEMA"]?.ToString() ?? "";
+
+                if (!string.IsNullOrEmpty(module) && !string.IsNullOrEmpty(company) && !string.IsNullOrEmpty(year))
+                {
+                    var getClassicControlList = _repo.LoadClassicControlForModule(module);
+                    var getModules = _repo.LoadModules().FirstOrDefault(k => k.MODULE_CODE == module);
+                    var getControl = getClassicControlList.FirstOrDefault(k => k.Module == module && k.LOCA == company && k.USR_ID == year);
+
+                    Session["USER_ORA"] = request.Record.UserOra;
+                    Session["MODULE_CODE"] = module;
+                    Session["LOCA"] = company;
+                    Session["SCHEMA"] = year;
+
+                    if (getModules != null)
+                    {
+                        Session["MODULE_NAME"] = getModules.MODULE_NAME;
+                        Session["MENU_TABLE"] = getModules.MENU_TABLE;
+                        Session["USRACS_TABLE"] = getModules.USRACS_TABLE;
+                        Session["UNIT_TABLE"] = getModules.UNIT_TABLE;
+                        Session["UNIT_FIELD"] = getModules.UNIT_FIELD;
+                    }
+                    if (getControl != null)
+                    {
+                        Session["COMPANY"] = getControl.NAME;
+                        Session["FINANCIAL_YEAR"] = getControl.YR;
+                    }
+
+                    _repo.SetContextPrefix(
+                        //year,
+                        getModules?.MENU_TABLE ?? "",
+                        getModules?.USRACS_TABLE ?? "",
+                        getModules?.UNIT_FIELD ?? "",
+                        getModules?.UNIT_TABLE ?? "",
+                        getModules?.MODULE_NAME ?? "",
+                        module
+                    );
+                }
+
+                _repo.SaveUserAccess(request.Record, encodedPassword, CurrentUser(), company, year, !isNew);
             }
             catch (Exception ex)
             {
@@ -439,6 +507,9 @@ namespace ClassicErpMainV2.Areas.UserAccessMvc.Controllers
     {
         public UserAccessRecord Record { get; set; }
         public bool IsNewRecord { get; set; }
+        public string Module { get; set; }
+        public string Company { get; set; }
+        public string Year { get; set; }
     }
 
     public class UserListViewModel
