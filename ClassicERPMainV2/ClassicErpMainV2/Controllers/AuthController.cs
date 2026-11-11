@@ -25,7 +25,7 @@ namespace ClassicErpMainV2.Controllers
         // GET: Login
         public ActionResult Login()
         {
-            return View();
+            return View(new Model_User());
         }
         public async Task<ActionResult> Auth(Model_User model_User)
         {
