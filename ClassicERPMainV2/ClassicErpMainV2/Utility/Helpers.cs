@@ -39,10 +39,22 @@ namespace ClassicErpMainV2.Utility
             private string _menuSchema;
             private string _address;
             private DateTime? _lastLoginDt;
+            private string _factoryedb;
+            private string _firstname;
             public string DocYear
             {
                 get { return _docyear; }
                 set { _docyear = value; }
+            }
+            public string getUserfullName
+            {
+                get { return _firstname; }
+                set { _firstname = value; }
+            }
+            public string Factorydb
+            {
+                get { return _factoryedb; }
+                set { _factoryedb = value; }
             }
             public string Address
             {

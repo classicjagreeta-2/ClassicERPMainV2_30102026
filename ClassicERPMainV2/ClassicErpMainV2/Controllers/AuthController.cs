@@ -55,19 +55,54 @@ namespace ClassicErpMainV2.Controllers
 
                 if (Return != null)
                 {
+                    //if (Return.IsSuccessStatusCode)
+                    //{
+                    //    var uuuu = await Services.PostAsync<UserModels>($"/Users/SaasUserSessionCreate?userName={model_User.UserName}", null);
+
+                    //    //Helpers.UserInfo.getUserName = model_User.UserName;
+                    //    Helpers.UserInfo.getUserName = Return.Data.username;
+
+                    //    Session["IsAuthenticate"] = Return.Data.username;
+                    //    Session["FirstName"] = Return.Data.firstName;
+                    //    Session["LastLoginDt"] = Return.Data.lastLoginDt;
+                    //    //Session["IsAuthenticate"] = model_User.UserName;
+                    //    // 2. REQUIRED FOR [Authorize]: Issue the Forms Authentication Cookie
+                    //    FormsAuthentication.SetAuthCookie(model_User.UserName, createPersistentCookie: false);
+                    //    return Json(new
+                    //    {
+                    //        result = "Redirect",
+                    //        url = Url.Action("SelectModule", "Module")
+                    //    });
+                    //}
                     if (Return.IsSuccessStatusCode)
                     {
-                        var uuuu = await Services.PostAsync<UserModels>($"/Users/SaasUserSessionCreate?userName={model_User.UserName}", null);
+                        // Store user details
+                        Helpers.UserInfo.getUserName = Return.Data.username;
 
-                        Helpers.UserInfo.getUserName = model_User.UserName;
-                        Session["IsAuthenticate"] = model_User.UserName;
-                        // 2. REQUIRED FOR [Authorize]: Issue the Forms Authentication Cookie
-                        FormsAuthentication.SetAuthCookie(model_User.UserName, createPersistentCookie: false);
+                        Session["IsAuthenticate"] = Return.Data.firstName;
+                        Session["FirstName"] = Return.Data.firstName;
+                        Session["LastLoginDt"] = Return.Data.lastLoginDt;
+
+                        // Format previous login date
+                        string lastLogin = Return.Data.lastLoginDt.HasValue
+                            ? Return.Data.lastLoginDt.Value.ToString("dd-MMM-yyyy hh:mm:ss tt")
+                            : "No previous login found";
+
+                        var uuuu = await Services.PostAsync<UserModels>(
+                            $"/Users/SaasUserSessionCreate?userName={model_User.UserName}", null);
+
+                        FormsAuthentication.SetAuthCookie(
+                            model_User.UserName,
+                            createPersistentCookie: false);
+
                         return Json(new
                         {
                             result = "Redirect",
-                            url = Url.Action("SelectModule", "Module")
-                        });
+                            url = Url.Action("SelectModule", "Module"),
+                            username = Return.Data.firstName,
+                            firstName = Return.Data.firstName,
+                            lastLogin = lastLogin
+                        }, JsonRequestBehavior.AllowGet);
                     }
                     else
                     {
@@ -210,6 +245,8 @@ namespace ClassicErpMainV2.Controllers
         public string username { get; set; }
         public string accessToken { get; set; }
         public string refreshToken { get; set; }
+        public DateTime? lastLoginDt { get; set; }
+        
     }
     public class COMPANY_LICENSE_FULL
     {

@@ -14,7 +14,7 @@ namespace ClassicErpMainV2
 {
     public class Helpers
     {
-        public static class UserInfo
+        public  class UserInfo
         {
             private static string _userid;
             private static string _username;
@@ -24,10 +24,16 @@ namespace ClassicErpMainV2
             private static string _moduleCode;
             private static string _loca;
             private static DateTime? _lastLoginDt;
+            private static string _firstname;
             public static string Loca
             {
                 get { return _loca; }
                 set { _loca = value; }
+            }
+            public  string getUserfullName
+            {
+                get { return _firstname; }
+                set { _firstname = value; }
             }
             public static string ModuleCode
             {

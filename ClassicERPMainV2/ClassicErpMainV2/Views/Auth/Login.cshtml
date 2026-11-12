@@ -18,6 +18,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        .login-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #EEF2FA;
+            border: 1px solid #DCE4F2;
+            border-radius: 8px;
+            color: #002164;
+            font-size: 13px;
+            line-height: 2;
+        }
+
+            .login-info i {
+                width: 20px;
+                color: #FE4D00;
+            }
         :root {
             --cc-navy: #002164;
             --cc-navy-800: #0B2C73;
@@ -163,7 +178,7 @@
                 <circle class="cc-dot" cx="62" cy="62" r="24" />
                 <text x="140" y="60" font-family="Inter, Arial, sans-serif" font-size="66" font-weight="700" fill="currentColor" letter-spacing="-1.5">classic</text>
                 <text x="140" y="118" font-family="Inter, Arial, sans-serif" font-size="66" font-weight="700" fill="currentColor" textLength="440" lengthAdjust="spacingAndGlyphs">consultants</text>
-                <text class="cc-tag" x="142" y="158" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="500" textLength="436" lengthAdjust="spacing">solutions. not just softwares.</text>
+                <text class="cc-tag" x="100" y="158" font-family="Inter, Arial, sans-serif" font-size="31" font-weight="500" textLength="436" lengthAdjust="spacing">solutions. not just softwares.</text>
             </svg>
 
             @* Middle text (headline / value points) left blank for now. *@
@@ -281,7 +296,36 @@
 
                 $("#btnsubmit").buttonLoader('stop', 'Sign in');
 
-                window.location.href = data.url;
+                // Generate login information dynamically
+                var loginHtml = `
+     <div class="login-info">
+         <div>
+             <i class="fas fa-user"></i>
+             <strong>Username:</strong>
+             <span>${$('<div>').text(data.username || '').html()}</span>
+         </div>
+
+         <div>
+             <i class="fas fa-clock"></i>
+             <strong>Last Login:</strong>
+             <span>${$('<div>').text(data.lastLogin || 'No previous login found').html()}</span>
+         </div>
+     </div>
+ `;
+
+                // Display inside the login form
+                $("#lastLoginBox").remove();
+
+                $(".secure-note").after(
+                    $('<div>', {
+                        id: 'lastLoginBox',
+                        html: loginHtml
+                    })
+                );
+
+                setTimeout(function () {
+                    window.location.href = data.url;
+                }, 1000);
 
             }
             else {
@@ -294,6 +338,28 @@
                 $("#btnsubmit").buttonLoader('stop', '');
             }
         }
+
+        //function Oncomplete(response) {
+
+        //    var data = response.responseJSON;
+
+        //    if (data && data.result == "Redirect") {
+
+        //        $("#btnsubmit").buttonLoader('stop', 'Sign in');
+
+        //        window.location.href = data.url;
+
+        //    }
+        //    else {
+        //        $(".notification").notify(
+        //            data ? data.Message : "Login failed.",
+        //            "error",
+        //            { position: "bottom center" }
+        //        );
+
+        //        $("#btnsubmit").buttonLoader('stop', '');
+        //    }
+        //}
         //function Oncomplete(response) {
         //    debugger;
         //    if (response.responseJSON.result == "Redirect") {

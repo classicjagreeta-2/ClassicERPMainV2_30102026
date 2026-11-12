@@ -3,7 +3,11 @@
 @{
     Layout = null;
     ViewBag.Title = "Classic ERP Main";
-    var ccUserName = (Session["IsAuthenticate"] as string) ?? (Session["Username"] as string) ?? "";
+    //var ccUserName = (Session["IsAuthenticate"] as string) ?? (Session["Username"] as string) ?? "";
+    var ccUserName = (Session["FirstName"] as string)
+             ?? (Session["IsAuthenticate"] as string)
+             ?? (Session["Username"] as string)
+             ?? "";
     var ccInitials = ccUserName.Length >= 2 ? ccUserName.Substring(0, 2).ToUpper() : ccUserName.ToUpper();
     var ccLastLogin = Session["LastLoginDt"] as DateTime?;
 }
@@ -324,7 +328,7 @@
     </main>
 
     <footer class="wrap cc-footer">
-        <span>© @DateTime.Now.Year Classic Consultants · solutions. not just softwares.</span>
+        <span>@DateTime.Now.Year Classic Consultants &middot; solutions. not just softwares.</span>
         <span>Version @ViewContext.Controller.GetType().Assembly.GetName().Version.ToString(3)</span>
     </footer>
 
