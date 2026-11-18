@@ -22,13 +22,4 @@ Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B91BCC29-7A3C-4176-BAF2-26DB3A933AC5}
 	EndGlobalSection
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 2
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = https://dev.azure.com/classicerptfs
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = ClassicErpMainV2\\ClassicErpMainV2.csproj
-		SccProjectName1 = ClassicErpMainV2
-		SccLocalPath1 = ClassicErpMainV2
-	EndGlobalSection
 EndGlobal

@@ -163,6 +163,11 @@
                             </div>
 
                             <div class="space-y-1">
+                                <label for="ddlContextLocation" class="block text-xs font-semibold text-slate-700">Location</label>
+                                <select id="ddlContextLocation" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:border-brand-600 focus:outline-none font-medium"><option value="">----</option></select>
+                            </div>
+
+                            <div class="space-y-1">
                                 <label for="ddlContextYear" class="block text-xs font-semibold text-slate-700">Year</label>
                                 <select id="ddlContextYear" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:border-brand-600 focus:outline-none font-medium"><option value="">----</option></select>
                             </div>
@@ -328,7 +333,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="~/Areas/Admin/Scripts/useraccess-tree.js"></script>
+    <script src="~/Areas/Admin/Scripts/useraccess-tree.js?v=@DateTime.UtcNow.Ticks"></script>
 
     <script>
         var currentUserOra = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(u.UserOra));
@@ -351,7 +356,7 @@
             var treePanel = document.getElementById('treePanel');
             var treePlaceholder = document.createElement('div');
             treePlaceholder.className = 'ua-tree-placeholder';
-            treePlaceholder.textContent = 'Choose Module / Company / Year, then click Load to view rights.';
+            treePlaceholder.textContent = 'Choose Module / Company / Location / Year, then click Load to view rights.';
             treePanel.appendChild(treePlaceholder);
 
 
@@ -364,7 +369,7 @@
         }
 
         function updateLoadButtonVisibility() {
-            var hasAll = !!(ddlModule.value && ddlCompany.value && ddlYear.value);
+            var hasAll = !!(ddlModule.value && ddlCompany.value && ddlLocation.value && ddlYear.value);
             btnLoadContextEl.style.display = hasAll ? '' : 'none';
         }
 
@@ -533,35 +538,29 @@
         }
 
         document.getElementById('btnSave').addEventListener('click', function() {
-            if (!validateForm()) return;
+            //if (!validateForm()) return;
             if (!treeData) {
                 var proceed = confirm('No rights have been loaded (click Load first to review/edit them). Save anyway with no rights assigned?');
                 if (!proceed) return;
             }
 
-            currentUnitRights = [];
-            var totalUnits = $("#unitGridBody .chk-unit").length;
-            var selectedCount = $("#unitGridBody .chk-unit:checked").length;
-            if (totalUnits !== selectedCount) {
-                $("#unitGridBody .chk-unit").each(function () {
-                    currentUnitRights.push({
-                        UnitCode: $(this).data("code"),
-                        IsAssigned: $(this).is(":checked")
+            // 1. Build AssignedUnits from in-memory currentUnitRights (populated by Unit modal Ok)
+            // Convention: empty array = all units; specific codes = restricted access
+            var selectedUnits = [];
+            if (currentUnitRights && currentUnitRights.length > 0) {
+                var assignedList = currentUnitRights.filter(function(u) { return u.IsAssigned; });
+                var totalUnitCount = currentUnitRights.length;
+                // Only send specific codes if NOT all units are selected
+                // (all selected OR none selected → send empty → server saves UNIT='' meaning all)
+                if (assignedList.length > 0 && assignedList.length < totalUnitCount) {
+                    selectedUnits = assignedList.map(function(u) {
+                        return {
+                            UnitCode: String(u.UnitCode || '').trim(),
+                            UnitName: u.UnitName || ''
+                        };
                     });
-                });
-            };
-
-            // 1. Filter selected Units
-            var selectedUnits = currentUnitRights
-                .filter(function(u) {
-                    return u.IsAssigned;
-                })
-                .map(function(u) {
-                    return {
-                        UnitCode: u.UnitCode,
-                        UnitName: u.UnitName
-                    };
-                });
+                }
+            }
 
             // 2. Filter selected Voucher Types
             var selectedVouchers = currentVoucherRights
@@ -574,19 +573,6 @@
                         DescOra: v.DescOra,
                         Selected: v.Selected,
                     };
-                });
-
-            // Filter allowed vouchers and map to the required model format
-            var allowedVouchers = currentVoucherRights
-                .filter(function(v) {
-                    return v.Selected;
-                })
-                .map(function(v) {
-                    return {
-                        Type: v.Type,
-                        DescOra: v.DescOra,
-                        Selected: v.Selected,
-                    }
                 });
 
             var payload = {
@@ -604,7 +590,7 @@
                 },
                 IsNewRecord: isNewUser,
                 Module: ddlModule ? ddlModule.value : '',
-                Company: ddlCompany ? ddlCompany.value : '',
+                Company: getSelectedCompanyLoca(),
                 Year: ddlYear ? ddlYear.value : ''
             };
 
@@ -681,12 +667,7 @@
 
         // Clear voucher state when module changes to a non-voucher module
         function resetVoucherRights() {
-            if (typeof currentVoucherRights !== 'undefined' && currentVoucherRights.length > 0) {
-                currentVoucherRights.forEach(function(v) {
-                    v.IsAssigned = false;
-                });
-            }
-
+            currentVoucherRights = [];
             // Reset UI elements in modal grid if rendered
             $('#voucherGridBody input[type="checkbox"]').prop('checked', false);
             $('#voucherSelectAll').prop('checked', false);
@@ -747,16 +728,41 @@
                 var opt = document.createElement('option');
                 opt.value = item.value;
                 opt.textContent = item.text;
+                opt.title = item.text;
+                if (item.loca) {
+                    opt.setAttribute('data-loca', item.loca);
+                }
                 selectEl.appendChild(opt);
             });
         }
 
         var ddlModule = document.getElementById('ddlContextModule');
         var ddlCompany = document.getElementById('ddlContextCompany');
+        var ddlLocation = document.getElementById('ddlContextLocation');
         var ddlYear = document.getElementById('ddlContextYear');
         var btnLoadContextEl = document.getElementById('btnLoadContext');
 
+        function getSelectedCompanyLoca() {
+            if (ddlYear && ddlYear.selectedIndex >= 0) {
+                var yearOpt = ddlYear.options[ddlYear.selectedIndex];
+                var yearLoca = yearOpt ? yearOpt.getAttribute('data-loca') : '';
+                if (yearLoca) return yearLoca;
+            }
+            if (ddlLocation && ddlLocation.selectedIndex >= 0) {
+                var locOpt = ddlLocation.options[ddlLocation.selectedIndex];
+                var locLoca = locOpt ? locOpt.getAttribute('data-loca') : '';
+                if (locLoca) return locLoca;
+            }
+            return ddlCompany ? ddlCompany.value : '';
+        }
+
+        function resetCachedRights() {
+            if (typeof currentUnitRights !== 'undefined') currentUnitRights = [];
+            if (typeof currentVoucherRights !== 'undefined') currentVoucherRights = [];
+        }
+
         function loadCompanies() {
+            resetCachedRights();
             $.getJSON('@Url.Action("GetCompanies", "UserAccess")', {
                 module: ddlModule.value
             }, function(companies) {
@@ -764,18 +770,48 @@
                 if (companies && companies.length > 0) {
                     ddlCompany.selectedIndex = 1;
                 }
-                populateSelect(ddlYear, null, 'No Year');
-                loadYears();
+                populateSelect(ddlLocation, null, 'No locations');
+                populateSelect(ddlYear, null, 'No years');
+                loadLocations();
             });
         }
 
-        function loadYears() {
+        function loadLocations() {
+            resetCachedRights();
             var selectedValue = ddlCompany.value;
             var selectedText = ddlCompany.selectedIndex >= 0 ? ddlCompany.options[ddlCompany.selectedIndex].text : '';
-            if (selectedValue || selectedValue.trim() !== "") {
-                $.getJSON('@Url.Action("GetYears", "UserAccess")', {
+            if (selectedValue && selectedValue.trim() !== "") {
+                $.getJSON('@Url.Action("GetLocation", "UserAccess")', {
                     module: ddlModule.value,
                     company: selectedText
+                }, function (locations) {
+                    populateSelect(ddlLocation, locations, 'No locations');
+                    resetTreeToPlaceholder();
+                    if (locations && locations.length > 0) {
+                        ddlLocation.selectedIndex = 1;
+                        loadYears();
+                    } else {
+                        loadYears(true);
+                    }
+                });
+            }
+            else {
+                populateSelect(ddlLocation, null, 'No locations');
+                populateSelect(ddlYear, null, 'No years');
+            }
+        }
+
+        function loadYears(allowEmptyLocation) {
+            resetCachedRights();
+            var selectedCompanyVal = ddlCompany.value;
+            var selectedCompanyText = ddlCompany.selectedIndex >= 0 ? ddlCompany.options[ddlCompany.selectedIndex].text : '';
+            var selectedLocation = ddlLocation.value;
+            var hasLocation = !!(selectedLocation && selectedLocation.trim() !== "");
+            if (selectedCompanyVal && selectedCompanyVal.trim() !== "" && (hasLocation || allowEmptyLocation === true)) {
+                $.getJSON('@Url.Action("GetYears", "UserAccess")', {
+                    module: ddlModule.value,
+                    company: selectedCompanyText,
+                    location: hasLocation ? selectedLocation : ''
                 }, function (years) {
                     populateSelect(ddlYear, years, 'No years');
                     resetTreeToPlaceholder();
@@ -789,27 +825,24 @@
                 populateSelect(ddlYear, null, 'No years');
             }
         }
-        $('#ddlYear option').each(function () {
-            $(this).attr('title', $(this).text());
-        });
 
         ddlModule.addEventListener('change', loadCompanies);
-        ddlCompany.addEventListener('change', loadYears);
-        ddlYear.addEventListener('change', function() {
-            var selectedModul = ddlModule.value;
-            var selectedCompany = ddlCompany.value;
+        ddlCompany.addEventListener('change', loadLocations);
+        ddlLocation.addEventListener('change', loadYears);
+        $(ddlYear).on('change', function() {
+            resetCachedRights();
             var selectedYr = ddlYear.value;
-            if (selectedYr || selectedYr.trim() !== "") {
+            if (selectedYr && selectedYr.trim() !== "") {
                 $.getJSON('@Url.Action("CurrentSession", "UserAccess")', {
                     is_new_record: '@u.IsNewRecord',
                     userOra: currentUserOra,
                     module: ddlModule.value,
-                    company: ddlCompany.value,
+                    company: getSelectedCompanyLoca(),
                     year: ddlYear.value
                 }).done(function(result) {
 
                 }).fail(function() {
-                    //    alert('Could not load rights for that Module/Company/Year.');
+                    //    alert('Could not load rights for that Module/Company/Location/Year.');
                 }).always(function() {
                     //btn.disabled = !UserAccessTree.isEditable();
                 });
@@ -830,18 +863,16 @@
             $.getJSON('@Url.Action("GetVoucherRights", "UserAccess")', {
                 userOra: currentUserOra,
                 module: ddlModule.value,
-                company: ddlCompany.value,
+                company: getSelectedCompanyLoca(),
                 year: ddlYear.value
             }).done(function(result) {
                 if (!result.success) {
                     alert(result.message);
                     return;
                 }
-                debugger;
                 if (treePlaceholder.parentNode)
                     treePlaceholder.parentNode.removeChild(treePlaceholder);
                 menuTreeData = result.menuRights || [];
-                //debugger;
                 treeData = UserAccessTree.renderTree(treePanel, menuTreeData, result.rights);
                 UserAccessTree.setEditable(UserAccessTree.isEditable()); // re-apply current mode to the freshly rendered tree
                 const btnExpandAllButton = document.getElementById('btnExpandAll');
@@ -849,7 +880,7 @@
                     btnExpandAllButton.click(); // Triggers click event on #btnOther
                 }
             }).fail(function() {
-                alert('Could not load rights for that Module/Company/Year.');
+                alert('Could not load rights for that Module/Company/Location/Year.');
             }).always(function() {
 
             });
@@ -868,7 +899,7 @@
             $.getJSON('@Url.Action("GetVoucherRights", "UserAccess")', {
                     userOra: currentUserOra,
                     module: ddlModule.value,
-                    company: ddlCompany.value,
+                    company: getSelectedCompanyLoca(),
                     year: ddlYear.value
                 })
                 .done(function(result) {
@@ -890,11 +921,7 @@
             var allChecked = vouchers.length > 0;
 
             vouchers.forEach(function(v, index) {
-                //if (!v.IsAllowed) allChecked = false;
-                if (!v.Selected)
-                    allChecked = false;
-                if (v.Selected)
-                    allChecked = true;
+                if (!v.Selected) allChecked = false;
 
                 var row = '<tr>' +
                     '<td class="marker-col">' + (index + 1) + '</td>' +
@@ -914,8 +941,12 @@
 
         // 1. Open Voucher Modal when the Voucher toggle button is clicked
         $('#btnVoucher').on('click', function () {
-            $("#voucherGridBody").empty();
-            loadVoucherRights();
+            if (currentVoucherRights && currentVoucherRights.length > 0) {
+                // Already loaded — re-render from in-memory state to preserve selections
+                renderVoucherGrid(currentVoucherRights);
+            } else {
+                loadVoucherRights();
+            }
             $('#voucherModalOverlay').css('display', 'flex');
         });
 
@@ -962,7 +993,7 @@
             $.getJSON('@Url.Action("GetAssignedUnits", "UserAccess")', {
                     userOra: currentUserOra,
                     module: ddlModule.value,
-                    company: ddlCompany.value,
+                    company: getSelectedCompanyLoca(),
                     year: ddlYear.value
                 })
                 .done(function(result) {
@@ -993,7 +1024,6 @@
 
             var isEditable = UserAccessTree.isEditable();
             var allChecked = true;
-            debugger;
             units.forEach(function(u, index) {
                 if (!u.IsAssigned) allChecked = false;
 
@@ -1019,10 +1049,16 @@
 
         // Open modal and load data
         $('#btnUnit').on('click', function () {
-            $("#unitGridBody").empty();
-            loadUnitRights(function() {
+            if (currentUnitRights && currentUnitRights.length > 0) {
+                // Already loaded — re-render from in-memory state to preserve edits
+                renderUnitGrid(currentUnitRights);
                 $('#unitModalOverlay').css('display', 'flex');
-            });
+            } else {
+                $("#unitGridBody").empty();
+                loadUnitRights(function() {
+                    $('#unitModalOverlay').css('display', 'flex');
+                });
+            }
         });
 
         // Sync UI checks back to in-memory array & close modal
@@ -1114,18 +1150,22 @@
                     break;
             }
 
+            // Find label element if not provided directly
+            if (!label && leafNode && leafNode._liEl) {
+                label = leafNode._liEl.querySelector('.ua-aedv-' + letter.toLowerCase());
+            }
+
+            var displayLabel = labelText || { A: 'Add', E: 'Edit', D: 'Delete', V: 'View' }[letter] || letter;
+
             // Update exact clicked label
             if (label) {
-
-                label.setAttribute(
-                    "data-days",
-                    lockDays
-                );
-
-                label.setAttribute(
-                    "title",
-                    labelText + " Lock Days: " + lockDays
-                );
+                if (typeof label.setAttribute === 'function') {
+                    label.setAttribute("data-days", lockDays);
+                    label.setAttribute("title", displayLabel + " Lock Days: " + lockDays);
+                } else if ($(label).length) {
+                    $(label).attr("data-days", lockDays);
+                    $(label).attr("title", displayLabel + " Lock Days: " + lockDays);
+                }
             }
 
             // Close popup
@@ -1136,6 +1176,13 @@
             modal.removeData("letter");
             modal.removeData("label");
             modal.removeData("labelText");
+        });
+
+        $(document).on("keydown", "#txtLockDays", function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                $("#btnAedvSave").click();
+            }
         });
 
         $(document).on("click", "#btnCloseAedv", function () {

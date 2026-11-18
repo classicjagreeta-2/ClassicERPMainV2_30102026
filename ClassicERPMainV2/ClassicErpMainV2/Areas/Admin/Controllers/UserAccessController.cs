@@ -79,38 +79,42 @@ namespace ClassicErpMainV2.Areas.Admin.Controllers
             return Json(dta, JsonRequestBehavior.AllowGet);
         }
 
-        // GET /UserAccess/GetYears?module=...&company=... — second cascade step
+        // GET /UserAccess/GetYears?module=...&company=...&location=... — third cascade step
         [HttpGet]
-        public JsonResult GetYears(string module, string company)
+        public JsonResult GetYears(string module, string company, string location = "")
         {
             Session["Loca"] = company;
             var _data = _repo.LoadClassicControlForModule(module);
-            var dta = _data.Where(k => k.Module == module && k.NAME == company).Select(k => new
+            var query = _data.Where(k => k.Module == module && k.NAME == company);
+            if (!string.IsNullOrWhiteSpace(location))
+            {
+                query = query.Where(k => string.Equals(k.UNITDEST?.Trim(), location.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+            var dta = query.Select(k => new
             {
                 value = k.USR_ID,
-                //text = K.YRFR
-                text = k.UNITDEST + " (" +k.YRFR.ToString("dd/MM/yyyy") + " - " + k.YRTO.ToString("dd/MM/yyyy") + ")" 
+                text = k.YRFR.ToString("dd/MM/yyyy") + " - " + k.YRTO.ToString("dd/MM/yyyy"),
+                loca = k.LOCA
             }).ToList();
 
-            //var dta1 = _data.Where(k => k.Module == module && k.NAME == company).Select(k => new
-            //{
-            //    value = k.USR_ID,
-            //    text = k.UNITDEST
-            //}).ToList().Distinct();
-            //_repo.LoadYearsForCompany(module, company)
-            return Json( dta , JsonRequestBehavior.AllowGet);
+            return Json(dta, JsonRequestBehavior.AllowGet);
         }
 
+        // GET /UserAccess/GetLocation?module=...&company=... — second cascade step
         [HttpGet]
         public JsonResult GetLocation(string module, string company)
         {
             Session["Loca"] = company;
-            var dta = _repo.LoadClassicControlForModule(module).Where(k => k.Module == module && k.NAME == company).Select(k => new
-            {
-                value = k.USR_ID,
-                text = k.UNITDEST
-            }).ToList();
-            //_repo.LoadYearsForCompany(module, company)
+            var dta = _repo.LoadClassicControlForModule(module)
+                .Where(k => k.Module == module && k.NAME == company && !string.IsNullOrWhiteSpace(k.UNITDEST))
+                .DistinctBy(k => k.UNITDEST.Trim())
+                .Select(k => new
+                {
+                    value = k.UNITDEST.Trim(),
+                    text = k.UNITDEST.Trim(),
+                    loca = k.LOCA
+                }).ToList();
+
             return Json(dta, JsonRequestBehavior.AllowGet);
         }
 
@@ -126,7 +130,8 @@ namespace ClassicErpMainV2.Areas.Admin.Controllers
                 {
                     var getClassicControlList = _repo.LoadClassicControlForModule(module);
                     var getModules = _repo.LoadModules().FirstOrDefault(k => k.MODULE_CODE == module);
-                    var getControl = getClassicControlList.FirstOrDefault(k => k.Module == module && k.LOCA == company && k.USR_ID == year);
+                    var getControl = getClassicControlList.FirstOrDefault(k => k.Module == module && k.LOCA == company && k.USR_ID == year)
+                                  ?? getClassicControlList.FirstOrDefault(k => k.Module == module && k.USR_ID == year);
 
                     Session["USER_ORA"] = userOra;
                     Session["MODULE_CODE"] = module;
@@ -315,7 +320,8 @@ namespace ClassicErpMainV2.Areas.Admin.Controllers
                 {
                     var getClassicControlList = _repo.LoadClassicControlForModule(module);
                     var getModules = _repo.LoadModules().FirstOrDefault(k => k.MODULE_CODE == module);
-                    var getControl = getClassicControlList.FirstOrDefault(k => k.Module == module && k.LOCA == company && k.USR_ID == year);
+                    var getControl = getClassicControlList.FirstOrDefault(k => k.Module == module && k.LOCA == company && k.USR_ID == year)
+                                  ?? getClassicControlList.FirstOrDefault(k => k.Module == module && k.USR_ID == year);
 
                     Session["USER_ORA"] = request.Record.UserOra;
                     Session["MODULE_CODE"] = module;
@@ -347,7 +353,7 @@ namespace ClassicErpMainV2.Areas.Admin.Controllers
                     );
                 }
 
-                _repo.SaveUserAccess(request.Record, encodedPassword, CurrentUser(), company, year, !isNew, module);
+                _repo.SaveUserAccess(request.Record, encodedPassword, CurrentUser(), company, year, !isNew, module,User.Identity.Name);
             }
             catch (Exception ex)
             {
@@ -381,20 +387,21 @@ namespace ClassicErpMainV2.Areas.Admin.Controllers
             {
                 var getClassicControlList = _repo.LoadClassicControlForModule();
                 var getModules = _repo.LoadModules().Where(k => k.MODULE_CODE == module).FirstOrDefault();
-                var getControl = getClassicControlList.Where(k => k.Module == module && k.LOCA == company && k.USR_ID == year).FirstOrDefault();
+                var getControl = getClassicControlList.FirstOrDefault(k => k.Module == module && k.LOCA == company && k.USR_ID == year)
+                              ?? getClassicControlList.FirstOrDefault(k => k.Module == module && k.USR_ID == year);
 
                 Session["IS_NEW_RECORD"] = is_new_record;
                 Session["USER_ORA"] = userOra;
                 Session["MODULE_CODE"] = module;
-                Session["MODULE_NAME"] = getModules.MODULE_NAME;
-                Session["COMPANY"] = getControl.NAME;
-                Session["FINANCIAL_YEAR"] = getControl.YR;
-                Session["SCHEMA"] = getControl.USR_ID;
-                Session["LOCA"] = company;
-                Session["MENU_TABLE"] = getModules.MENU_TABLE;
-                Session["USRACS_TABLE"] = getModules.USRACS_TABLE;
-                Session["UNIT_TABLE"] = getModules.UNIT_TABLE;
-                Session["UNIT_FIELD"] = getModules.UNIT_FIELD;
+                Session["MODULE_NAME"] = getModules?.MODULE_NAME ?? "";
+                Session["COMPANY"] = getControl?.NAME ?? "";
+                Session["FINANCIAL_YEAR"] = getControl?.YR ?? "";
+                Session["SCHEMA"] = getControl?.USR_ID ?? year;
+                Session["LOCA"] = getControl?.LOCA ?? company;
+                Session["MENU_TABLE"] = getModules?.MENU_TABLE ?? "";
+                Session["USRACS_TABLE"] = getModules?.USRACS_TABLE ?? "";
+                Session["UNIT_TABLE"] = getModules?.UNIT_TABLE ?? "";
+                Session["UNIT_FIELD"] = getModules?.UNIT_FIELD ?? "";
                 var sasas = CurrentUnitTable();
 
                 _repo.SetContextPrefix(CurrentSchema(), CurrentMenuTable(), CurrentUsracsTable(), CurrentUnitTable(), CurrentUnitField(), "", "");

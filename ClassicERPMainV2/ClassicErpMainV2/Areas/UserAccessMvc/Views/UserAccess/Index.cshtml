@@ -954,6 +954,8 @@
             // Store the actual tree node
             $("#aedvModal").data("leafNode", this._leafNode);
             $("#aedvModal").data("letter", this._letter);
+            $("#aedvModal").data("label", this);
+            $("#aedvModal").data("labelText", text);
             $("#aedvModal").data("id", id);
 
             $("#aedvModalTitle").text(
@@ -1010,17 +1012,20 @@
             }
 
             // Update exact clicked label
+            if (!label && leafNode && leafNode._liEl) {
+                label = leafNode._liEl.querySelector('.ua-aedv-' + letter.toLowerCase());
+            }
+
+            var displayLabel = labelText || { A: 'Add', E: 'Edit', D: 'Delete', V: 'View' }[letter] || letter;
+
             if (label) {
-
-                label.setAttribute(
-                    "data-days",
-                    lockDays
-                );
-
-                label.setAttribute(
-                    "title",
-                    labelText + " Lock Days: " + lockDays
-                );
+                if (typeof label.setAttribute === 'function') {
+                    label.setAttribute("data-days", lockDays);
+                    label.setAttribute("title", displayLabel + " Lock Days: " + lockDays);
+                } else if ($(label).length) {
+                    $(label).attr("data-days", lockDays);
+                    $(label).attr("title", displayLabel + " Lock Days: " + lockDays);
+                }
             }
 
             // Close popup

@@ -268,6 +268,13 @@ namespace ClassicErpMainV2.Areas.Admin.Data
                 cnn, null, ("@key", keyValue)))
             using (var rdr = cmd.ExecuteReader())
             {
+                int ParseDays(object v)
+                {
+                    if (v == null || v == DBNull.Value) return 0;
+                    if (int.TryParse(v.ToString().Trim(), out int d)) return d;
+                    return 0;
+                }
+
                 while (rdr.Read())
                 {
                     result.Add(new MenuRight
@@ -275,9 +282,9 @@ namespace ClassicErpMainV2.Areas.Admin.Data
                         MnuId = rdr["MNUID"].ToString().Trim(),
                         IndexOra = rdr["INDEX_ORA"].ToString().Trim(),
                         Aedv = rdr["AEDV"].ToString().Trim(),
-                        AddLockDays = rdr["ADAY"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["ADAY"]),
-                        EditLockDays = rdr["EDAY"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["EDAY"]),
-                        DeleteLockDays = rdr["DDAY"] == DBNull.Value ? 0 : Convert.ToInt32(rdr["DDAY"])
+                        AddLockDays = ParseDays(rdr["ADAY"]),
+                        EditLockDays = ParseDays(rdr["EDAY"]),
+                        DeleteLockDays = ParseDays(rdr["DDAY"])
                     });
                 }
             }
@@ -441,7 +448,7 @@ namespace ClassicErpMainV2.Areas.Admin.Data
 
         // ---- save (was SAVE_Click) — one transaction, delete-then-reinsert pattern ----
         public void SaveUserAccess(UserAccessRecord record, string encodedPassword, string editedByUser,
-            string loca, string _unitId, bool isEdit,string module)
+            string loca, string _unitId, bool isEdit,string module,string createdbyuser)
         {
             using (var cnn = Open())
             using (var tx = cnn.BeginTransaction())
@@ -456,24 +463,26 @@ namespace ClassicErpMainV2.Areas.Admin.Data
                         {
                             Exec(cnn, tx,
                                 $"UPDATE {_schemaPrefix}.{_usracsTablePrefix} SET USER_NEW=@u, ENTDT_NEW=@p_d, TIME_NEW=@p_t, DTAG='E' WHERE UID_ORA=@id",
-                                ("@u", editedByUser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")), ("@id", record.UserOra));
+                                ("@u", createdbyuser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")), ("@id", record.UserOra));
                             Exec(cnn, tx, $"DELETE FROM {_schemaPrefix}.{_usracsTablePrefix} WHERE UID_ORA=@id", ("@id", record.UserOra));
                         }
                         Exec(cnn, tx,
                             $"UPDATE  USER_JAG SET USER_NEW=@u, ENTDT_NEW=@p_d, TIME_NEW=@p_t, DTAG='E' WHERE USER_ORA=@id",
-                            ("@u", editedByUser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")), ("@id", record.UserOra));
-                        Exec(cnn, tx, $"DELETE FROM  USER_JAG WHERE USER_ORA=@id", ("@id", record.UserOra));
+                            ("@u", createdbyuser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")), ("@id", record.UserOra));
+                        //Exec(cnn, tx, $"DELETE FROM  USER_JAG WHERE USER_ORA=@id", ("@id", record.UserOra));
                     }
-
-                    Exec(cnn, tx,
-                        $@"INSERT INTO  USER_JAG
+                    else
+                    {
+                        Exec(cnn, tx,
+                            $@"INSERT INTO  USER_JAG
                            (USER_ORA, GRP, PASSWORD, ACCESS_STR, USER_ENT, ENTDT, TIME_ORA, USERCREATED, USER_NAME,
                             MAIL_USER_NAME, MAIL_PASSWORD, SMTP_SERVER, SMTP_PORT)
                            VALUES (@id, @p_grp, @p_pwd, @p_enc, @p_by, @p_d, @p_t, @created, @name, @mail, @mailpwd, @smtp, @port)",
-                        ("@id", record.UserOra), ("@p_grp", record.Group ?? ""), ("@p_pwd", new string('*', 10)),
-                        ("@p_enc", encodedPassword), ("@p_by", editedByUser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")),
-                        ("@created", now), ("@name", record.UserName), ("@mail", record.EmailAddress ?? ""),
-                        ("@mailpwd", record.SmtpPassword ?? ""), ("@smtp", record.SmtpServer ?? ""), ("@port", record.SmtpPort ?? ""));
+                            ("@id", record.UserOra), ("@p_grp", record.Group ?? ""), ("@p_pwd", new string('*', 10)),
+                            ("@p_enc", encodedPassword), ("@p_by", createdbyuser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")),
+                            ("@created", now), ("@name", record.UserName), ("@mail", record.EmailAddress ?? ""),
+                            ("@mailpwd", record.SmtpPassword ?? ""), ("@smtp", record.SmtpServer ?? ""), ("@port", record.SmtpPort ?? ""));
+                    }                       
                     if (!string.IsNullOrEmpty(_moduleCodePrefix))
                     {
                         Exec(cnn, tx,
@@ -517,11 +526,22 @@ namespace ClassicErpMainV2.Areas.Admin.Data
                     }
                     foreach (var r in record.Rights)
                     {
-                        Exec(cnn, tx,
-                            $@"INSERT INTO {_schemaPrefix}.{_usracsTablePrefix} (LOCA,UID_ORA, MNUID, INDEX_ORA, AEDV, EDAY, ADAY, DDAY, SCHEMA_NM,USER_NAME,OS_USER,TERMINAL_ID)
-                               VALUES (@loca,@id, @mnu, @idx, @aedv, @eday, @aday, @p_dday, @unit,@user_name,@os_user,@terminal_id)",("@loca",loca),
-                            ("@id", record.UserOra), ("@mnu", r.MnuId), ("@idx", r.IndexOra), ("@aedv", r.Aedv),
-                            ("@eday", r.EditLockDays), ("@aday", r.AddLockDays), ("@p_dday", r.DeleteLockDays), ("@unit", _unitId),("@user_name", record.UserOra),("@os_user", record.UserOra),("@terminal_id", record.UserOra));
+                        if (module == "FN")
+                        {
+                            Exec(cnn, tx,
+                               $@"INSERT INTO {_schemaPrefix}.{_usracsTablePrefix} (LOCA,UID_ORA, MNUID, INDEX_ORA, AEDV, EDAY,USER_ORA, ENTDT, TIME_ORA, ADAY, DDAY, SCHEMA_NM,USER_NAME,OS_USER,TERMINAL_ID)
+                               VALUES (@loca,@id, @mnu, @idx, @aedv, @eday,@uora,@p_d,@p_t, @aday, @p_dday, @unit,@user_name,@os_user,@terminal_id)", ("@loca", loca),
+                               ("@id", record.UserOra), ("@mnu", r.MnuId), ("@idx", r.IndexOra), ("@aedv", r.Aedv),
+                               ("@eday", r.EditLockDays),("@uora",createdbyuser),("@p_d", now.Date),("@p_t", now.ToString("HH:mm")), ("@aday", r.AddLockDays), ("@p_dday", r.DeleteLockDays), ("@unit", _unitId), ("@user_name", record.UserOra), ("@os_user", record.UserOra), ("@terminal_id", record.UserOra));
+                        }
+                        else
+                        {
+                            Exec(cnn, tx,
+                                $@"INSERT INTO {_schemaPrefix}.{_usracsTablePrefix} (LOCA,UID_ORA, MNUID, INDEX_ORA, AEDV, EDAY, ADAY, DDAY, SCHEMA_NM,USER_NAME,OS_USER,TERMINAL_ID)
+                               VALUES (@loca,@id, @mnu, @idx, @aedv, @eday, @aday, @p_dday, @unit,@user_name,@os_user,@terminal_id)", ("@loca", loca),
+                                ("@id", record.UserOra), ("@mnu", r.MnuId), ("@idx", r.IndexOra), ("@aedv", r.Aedv),
+                                ("@eday", r.EditLockDays), ("@aday", r.AddLockDays), ("@p_dday", r.DeleteLockDays), ("@unit", _unitId), ("@user_name", record.UserOra), ("@os_user", record.UserOra), ("@terminal_id", record.UserOra));
+                        }
                     }
                     if (module == "FN")
                     {

@@ -156,13 +156,23 @@
             e.stopPropagation();
             if (!editable) return;
             if (e.target === label) {
-                var id = label.getAttribute('data-id');
+                var id = label.getAttribute('data-id') || (leafNode.MnuId || leafNode.Id);
                 var text = label.textContent.trim();
-                var currentLockDays = Number(label.getAttribute('data-days')) || 0;
+                var nodeLockDays = {
+                    A: leafNode._addLockDays,
+                    E: leafNode._editLockDays,
+                    D: leafNode._deleteLockDays,
+                    V: 0
+                }[letter];
+                var currentLockDays = (nodeLockDays !== undefined && nodeLockDays !== null)
+                    ? Number(nodeLockDays)
+                    : (Number(label.getAttribute('data-days')) || 0);
 
                 // Store references in jQuery Modal
-                $("#aedvModal").data("leafNode", label._leafNode);
-                $("#aedvModal").data("letter", label._letter);
+                $("#aedvModal").data("leafNode", leafNode);
+                $("#aedvModal").data("letter", letter);
+                $("#aedvModal").data("label", label);
+                $("#aedvModal").data("labelText", text);
                 $("#aedvModal").data("id", id);
 
                 // Update Modal UI
@@ -202,31 +212,13 @@
         if (leaf) {
             var right = rightsByKey[rightKey(node.Id, node.IndexOra)];
             node._aedv = (right && right.Aedv) ? right.Aedv : '';
-            node._addLockDays =
-                right && right.AddLockDays != null
-                    ? Number(right.AddLockDays)
-                    : 0;
+            var rAdd = right ? (right.AddLockDays != null ? right.AddLockDays : right.addLockDays) : null;
+            var rEdit = right ? (right.EditLockDays != null ? right.EditLockDays : right.editLockDays) : null;
+            var rDelete = right ? (right.DeleteLockDays != null ? right.DeleteLockDays : right.deleteLockDays) : null;
 
-            node._editLockDays =
-                right && right.EditLockDays != null
-                    ? Number(right.EditLockDays)
-                    : 0;
-
-            node._deleteLockDays =
-                right && right.DeleteLockDays != null
-                    ? Number(right.DeleteLockDays)
-                    : 0;
-            //if (right && Object.prototype.hasOwnProperty.call(right, 'AddLockDays')) {
-            //    node._addLockDays = right.AddLockDays || 0;
-            //}
-
-            //if (right && Object.prototype.hasOwnProperty.call(right, 'EditLockDays')) {
-            //    node._editLockDays = right.EditLockDays || 0;
-            //}
-
-            //if (right && Object.prototype.hasOwnProperty.call(right, 'DeleteLockDays')) {
-            //    node._deleteLockDays = right.DeleteLockDays || 0;
-            //}
+            node._addLockDays = rAdd != null ? Number(rAdd) : 0;
+            node._editLockDays = rEdit != null ? Number(rEdit) : 0;
+            node._deleteLockDays = rDelete != null ? Number(rDelete) : 0;
         }
         row.appendChild(dot);
 
@@ -371,7 +363,7 @@
     }
 
     function renderTree(container, treeData, rights) {
-        const result = rights.find(user => user.AddLockDays > 0);
+        rights = rights || [];
         linkParents(treeData, null);
         var rightsByKey = buildRightsIndex(rights);
         container.innerHTML = '';
@@ -479,7 +471,8 @@
         var seen = {};
 
         function visit(node) {
-            var key = (node.Id || '') + '!' + (node.IndexOra || '');
+            var mnuId = node.MnuId || node.Id || '';
+            var key = mnuId + '!' + (node.IndexOra || '');
 
             // 1. Leaf Group with AEDV (Type = 'E' / 'E1')
             if (isLeafGroup(node)) {
@@ -487,7 +480,7 @@
                     if (!seen[key]) {
                         seen[key] = true;
                         rights.push({
-                            mnuId: node.Id,
+                            mnuId: mnuId,
                             indexOra: node.IndexOra,
                             aedv: node._aedv,
                             addLockDays: Number(node._addLockDays || 0),
@@ -502,7 +495,7 @@
                 if (!seen[key]) {
                     seen[key] = true;
                     rights.push({
-                        mnuId: node.Id,
+                        mnuId: mnuId,
                         indexOra: node.IndexOra,
                         aedv: '',
                         addLockDays: 0,
@@ -516,7 +509,7 @@
                 if (!seen[key]) {
                     seen[key] = true;
                     rights.push({
-                        mnuId: node.Id,
+                        mnuId: mnuId,
                         indexOra: node.IndexOra,
                         aedv: node._aedv || 'X',
                         addLockDays: 0,
