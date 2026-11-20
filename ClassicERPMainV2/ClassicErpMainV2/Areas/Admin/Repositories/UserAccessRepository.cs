@@ -464,11 +464,11 @@ namespace ClassicErpMainV2.Areas.Admin.Data
                             Exec(cnn, tx,
                                 $"UPDATE {_schemaPrefix}.{_usracsTablePrefix} SET USER_NEW=@u, ENTDT_NEW=@p_d, TIME_NEW=@p_t, DTAG='E' WHERE UID_ORA=@id",
                                 ("@u", createdbyuser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")), ("@id", record.UserOra));
-                            Exec(cnn, tx, $"DELETE FROM {_schemaPrefix}.{_usracsTablePrefix} WHERE UID_ORA=@id", ("@id", record.UserOra));
+                            //Exec(cnn, tx, $"DELETE FROM {_schemaPrefix}.{_usracsTablePrefix} WHERE UID_ORA=@id", ("@id", record.UserOra));
                         }
                         Exec(cnn, tx,
-                            $"UPDATE  USER_JAG SET USER_NEW=@u, ENTDT_NEW=@p_d, TIME_NEW=@p_t, DTAG='E' WHERE USER_ORA=@id",
-                            ("@u", createdbyuser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")), ("@id", record.UserOra));
+                            $"UPDATE  USER_JAG SET USER_NEW=@u, ENTDT_NEW=@p_d, TIME_NEW=@p_t, DTAG='E',PASSWORD=@pwd,ACCESS_STR=@apwd WHERE USER_ORA=@id",
+                            ("@u", createdbyuser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")), ("@id", record.UserOra),("@pwd",new string('*', 10)),("@apwd",encodedPassword));
                         //Exec(cnn, tx, $"DELETE FROM  USER_JAG WHERE USER_ORA=@id", ("@id", record.UserOra));
                     }
                     else
@@ -482,46 +482,44 @@ namespace ClassicErpMainV2.Areas.Admin.Data
                             ("@p_enc", encodedPassword), ("@p_by", createdbyuser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")),
                             ("@created", now), ("@name", record.UserName), ("@mail", record.EmailAddress ?? ""),
                             ("@mailpwd", record.SmtpPassword ?? ""), ("@smtp", record.SmtpServer ?? ""), ("@port", record.SmtpPort ?? ""));
+
+                        if (record.AssignedUnits.Count == 0)
+                        {
+                            if (!string.IsNullOrEmpty(_moduleCodePrefix))
+                            {
+                                Exec(cnn, tx,
+                                $@"INSERT INTO  USER_SCHEMA_LINK
+                               (LOCA, UNIT, USER_ORA, USR_ID, MODULE_NAME, USER_ENT, ENTDT, TIME_ORA,MODULE_CODE)
+                               VALUES (@loca, '', @id, @unit, '{_moduleNamePrefix}', @p_by, @p_d, @p_t,'{_moduleCodePrefix}')",
+                                ("@loca", loca), ("@id", record.UserOra), ("@unit", _unitId), ("@p_by", editedByUser),
+                                ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")));
+                            }
+                        }
                     }                       
-                    if (!string.IsNullOrEmpty(_moduleCodePrefix))
+                    if (!string.IsNullOrEmpty(_moduleCodePrefix) && record.AssignedUnits.Count>0)
                     {
                         Exec(cnn, tx,
                         $@"DELETE FROM  USER_SCHEMA_LINK
                            WHERE USER_ORA=@id AND USR_ID=@unit AND MODULE_NAME='{_moduleNamePrefix}'",
                         ("@id", record.UserOra), ("@unit", _unitId));
                     }
-
-                    if (record.AssignedUnits.Count == 0)
+                    foreach (var u in record.AssignedUnits)
                     {
-                        if (!string.IsNullOrEmpty(_moduleCodePrefix))
-                        {
-                            Exec(cnn, tx,
+                        // duplicate-unit guard was Command3_Click's manual loop-compare;
+                        // enforced in the controller before this is ever called (see Save action).
+                        Exec(cnn, tx,
                             $@"INSERT INTO  USER_SCHEMA_LINK
-                               (LOCA, UNIT, USER_ORA, USR_ID, MODULE_NAME, USER_ENT, ENTDT, TIME_ORA,MODULE_CODE)
-                               VALUES (@loca, '', @id, @unit, '{_moduleNamePrefix}', @p_by, @p_d, @p_t,'{_moduleCodePrefix}')",
-                            ("@loca", loca), ("@id", record.UserOra), ("@unit", _unitId), ("@p_by", editedByUser),
-                            ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")));
-                        }
+                                (LOCA, UNIT, USER_ORA, USR_ID, MODULE_NAME, USER_ENT, ENTDT, TIME_ORA,MODULE_CODE)
+                                VALUES (@loca, @unit_code, @id, @unit, '{_moduleNamePrefix}', @p_by, @p_d, @p_t,'{_moduleCodePrefix}')",
+                            ("@loca", loca), ("@unit_code", u.UnitCode), ("@id", record.UserOra), ("@unit", _unitId),
+                            ("@p_by", editedByUser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")));
                     }
-                    else
-                    {
-                        foreach (var u in record.AssignedUnits)
-                        {
-                            // duplicate-unit guard was Command3_Click's manual loop-compare;
-                            // enforced in the controller before this is ever called (see Save action).
-                            Exec(cnn, tx,
-                                $@"INSERT INTO  USER_SCHEMA_LINK
-                                   (LOCA, UNIT, USER_ORA, USR_ID, MODULE_NAME, USER_ENT, ENTDT, TIME_ORA,MODULE_CODE)
-                                   VALUES (@loca, @unit_code, @id, @unit, '{_moduleNamePrefix}', @p_by, @p_d, @p_t,'{_moduleCodePrefix}')",
-                                ("@loca", loca), ("@unit_code", u.UnitCode), ("@id", record.UserOra), ("@unit", _unitId),
-                                ("@p_by", editedByUser), ("@p_d", now.Date), ("@p_t", now.ToString("HH:mm")));
-                        }
-                    }
-                    if (isEdit)
+                    
+                    if (isEdit && record.Rights.Count>0)
                     {
                         if (!string.IsNullOrEmpty(_schemaPrefix))
                         {
-                            Exec(cnn, tx, $"DELETE FROM {_schemaPrefix}.{_usracsTablePrefix} WHERE UID_ORA=@id AND UID_ORA <> ''", ("@id", record.UserOra));
+                            Exec(cnn, tx, $"DELETE FROM {_schemaPrefix}.{_usracsTablePrefix} WHERE UID_ORA=@id", ("@id", record.UserOra));
                         }
                     }
                     foreach (var r in record.Rights)
@@ -545,7 +543,7 @@ namespace ClassicErpMainV2.Areas.Admin.Data
                     }
                     if (module == "FN")
                     {
-                        if (isEdit)
+                        if (isEdit && record.VoucherRights.Where(v => v.Selected).Count()>0)
                         {
                             if (!string.IsNullOrEmpty(_schemaPrefix))
                             {
