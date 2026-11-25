@@ -20,6 +20,7 @@ namespace ClassicErpMainV2.Controllers
 {
     public class ModuleController : Controller
     {
+        public static string _ModuleCode;
         Logger logger = LogManager.GetCurrentClassLogger();
 
         public async Task<ActionResult> SelectModule()
@@ -49,47 +50,141 @@ namespace ClassicErpMainV2.Controllers
                 throw;
             }
         }
+        public class DefaultCompanyModel
+        {
+            public string DefaultCompany { get; set; }
+            public string DefaultLocation { get; set; }
+            public string DefaultFinancialYear { get; set; }
+        }
 
-        public async Task<ActionResult> RedirectToModule(string code, string controlschema, string menuschema, string sortby, string mname)
+        //public async Task<ActionResult> RedirectToModule(string code, string controlschema, string menuschema, string sortby, string mname)
+        //{
+        //    var username = Session["Username"];
+        //    var password = Session["Password"];
+        //    var LastLoginDt = Session["LastLoginDt"];
+        //    string file = Server.MapPath("~/Config.json");
+        //    string Json = System.IO.File.ReadAllText(file);
+        //    var configJson = JsonConvert.DeserializeObject<List<RootRedirection>>(Json);
+        //    var res = configJson.Where(k => k.modulecode.Contains(code.ToUpper())).FirstOrDefault();
+        //    var modulecode = res.modulecode.Where(j => j == code).FirstOrDefault();
+        //    var isSubDomain = res.isSubDomain;
+        //    string URL = "";
+        //    if (res != null)
+        //    {
+        //        //var plainTextBytes = Encoding.UTF8.GetBytes(code);
+        //        var module = EncryptionHelper.Encrypt(code); //Convert.ToBase64String(plainTextBytes);
+        //        //var _db = EncryptionHelper.Encrypt(Helpers.UserInfo.getDbName); //Convert.ToBase64String(Encoding.UTF8.GetBytes(Helpers.UserInfo.getDbName));
+        //        if (isSubDomain == true)
+        //        {
+        //            //URL = res.hosturl + modulecode + res.redirection + Helpers.UserInfo.getToken + string.Format("&module={0}", module);
+        //            var hosturl = $"{res.hosturl}{code}";
+        //            string json = string.Format(res.redirection, hosturl, code, controlschema, menuschema, sortby, mname, username, LastLoginDt, password);
+        //            URL = json;
+
+        //        }
+        //        else
+        //        {
+        //            //URL = res.hosturl + string.Format("/Module/CompanySelectionByPass?token={0}&module={1}&loca={2}", Helpers.UserInfo.getToken, module, _db);
+        //            //URL = res.hosturl + res.redirection + string.Format("?token={0}&module={1}&loca={2}", Helpers.UserInfo.getToken, encode, _db);
+        //            //URL = string.Format("{0}/{1}?code={2}&controlschema={3}&menuschema={4}&sortby={5}&mname={6}&UserName={7}&LastLoginDt={8}", res.hosturl, res.redirection, code, controlschema, menuschema, sortby, mname, username, LastLoginDt);
+        //            string json = string.Format(res.redirection, res.hosturl, code, controlschema, menuschema, sortby, mname, username, LastLoginDt, password);
+        //            URL = json;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        URL = "/";
+        //    }
+        //    return Redirect(URL);
+        //}
+
+        public async Task<ActionResult> RedirectToModule(
+    string code,
+    string controlschema,
+    string menuschema,
+    string sortby,
+    string mname,
+    string workType = null)
         {
             var username = Session["Username"];
             var password = Session["Password"];
             var LastLoginDt = Session["LastLoginDt"];
-            string file = Server.MapPath("~/Config.json");
-            string Json = System.IO.File.ReadAllText(file);
-            var configJson = JsonConvert.DeserializeObject<List<RootRedirection>>(Json);
-            var res = configJson.Where(k => k.modulecode.Contains(code.ToUpper())).FirstOrDefault();
-            var modulecode = res.modulecode.Where(j => j == code).FirstOrDefault();
-            var isSubDomain = res.isSubDomain;
-            string URL = "";
-            if (res != null)
-            {
-                //var plainTextBytes = Encoding.UTF8.GetBytes(code);
-                var module = EncryptionHelper.Encrypt(code); //Convert.ToBase64String(plainTextBytes);
-                //var _db = EncryptionHelper.Encrypt(Helpers.UserInfo.getDbName); //Convert.ToBase64String(Encoding.UTF8.GetBytes(Helpers.UserInfo.getDbName));
-                if (isSubDomain == true)
-                {
-                    //URL = res.hosturl + modulecode + res.redirection + Helpers.UserInfo.getToken + string.Format("&module={0}", module);
-                    var hosturl = $"{res.hosturl}{code}";
-                    string json = string.Format(res.redirection, hosturl, code, controlschema, menuschema, sortby, mname, username, LastLoginDt, password);
-                    URL = json;
 
-                }
-                else
+            // Save work type when Salary or Wages is selected
+            if (!string.IsNullOrEmpty(workType))
+            {
+                var userinfo = Utility.SessionHelper.GetUser();
+
+                if (userinfo != null)
                 {
-                    //URL = res.hosturl + string.Format("/Module/CompanySelectionByPass?token={0}&module={1}&loca={2}", Helpers.UserInfo.getToken, module, _db);
-                    //URL = res.hosturl + res.redirection + string.Format("?token={0}&module={1}&loca={2}", Helpers.UserInfo.getToken, encode, _db);
-                    //URL = string.Format("{0}/{1}?code={2}&controlschema={3}&menuschema={4}&sortby={5}&mname={6}&UserName={7}&LastLoginDt={8}", res.hosturl, res.redirection, code, controlschema, menuschema, sortby, mname, username, LastLoginDt);
-                    string json = string.Format(res.redirection, res.hosturl, code, controlschema, menuschema, sortby, mname, username, LastLoginDt, password);
-                    URL = json;
+                    userinfo.ModuleCode = code;
+                    userinfo.WorkType = workType;
+
+                    _ModuleCode = code;
+
+                    Utility.SessionHelper.SetUser(userinfo);
                 }
+
+                Session["WorkType"] = workType;
+            }
+
+            string file = Server.MapPath("~/Config.json");
+
+            string json = System.IO.File.ReadAllText(file);
+
+            var configJson = JsonConvert.DeserializeObject<List<RootRedirection>>(json);
+
+            var res = configJson?.FirstOrDefault(k =>
+                k.modulecode != null &&
+                k.modulecode.Contains(code.ToUpper()));
+
+            if (res == null)
+            {
+                return Redirect("/");
+            }
+
+            string URL;
+
+            if (res.isSubDomain == true)
+            {
+                var hosturl = $"{res.hosturl}{code}";
+
+                URL = string.Format(
+                    res.redirection,
+                    hosturl,
+                    code,
+                    controlschema,
+                    menuschema,
+                    sortby,
+                    mname,
+                    username,
+                    LastLoginDt,
+                    password,
+                    workType
+                );
             }
             else
             {
-                URL = "/";
+                URL = string.Format(
+                    res.redirection,
+                    res.hosturl,
+                    code,
+                    controlschema,
+                    menuschema,
+                    sortby,
+                    mname,
+                    username,
+                    LastLoginDt,
+                    password,
+                    workType
+                );
             }
+
             return Redirect(URL);
         }
+
+     
+        
         public async Task<ActionResult> CompanySelection(string code, string controlschema, string menuschema, string sortby, string mname)
         {
             Helpers.UserInfo.ModuleCode = code;
@@ -108,6 +203,15 @@ namespace ClassicErpMainV2.Controllers
                 selectListModel.FinancialYearList = data.Select(x => new SelectListItem { Text = "", Value = "" });
             }
             return View(selectListModel);
+        }
+        public ActionResult SelectWorkType(string code, string controlschema, string menuschema, string sortby, string mname)
+        {
+            ViewBag.Code = code;
+            ViewBag.ControlSchema = controlschema;
+            ViewBag.MenuSchema = menuschema;
+            ViewBag.SortBy = sortby;
+            ViewBag.MName = mname;
+            return View();
         }
 
         [HttpPost]

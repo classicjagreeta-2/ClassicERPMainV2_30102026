@@ -278,7 +278,7 @@
             </div>
         </div>
 
-        <div class="grid" id="ccModuleGrid">
+        @*<div class="grid" id="ccModuleGrid">
             @foreach (var item in Model)
             {
                 if (item.PERMISSION == "Y")
@@ -290,6 +290,51 @@
                             <div class="module-foot">
                                 <span class="module-tag"><span class="dot"></span>@(item.TECHNOLOGY == "MVC" ? "Entry" : "Reports")</span>
                                 <span class="module-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+                            </div>
+                        </a>
+                    </div>
+                }
+            }
+        </div>*@
+        <div class="grid" id="ccModuleGrid">
+            @foreach (var item in Model)
+            {
+                if (item.PERMISSION == "Y")
+                {
+                    var modules = new[] { "BP", "GP", "HP" };
+
+                    var actionName = modules.Contains(
+                        (item.MODULE_CODE ?? "").ToUpper()
+                    )
+                    ? "SelectWorkType"
+                    : "RedirectToModule";
+
+                    <div class="module-col">
+                        <a class="module-card"
+                           href="@Url.Action(actionName, "Module", new {
+                       code = item.MODULE_CODE,
+                       controlschema = item.CONTROL_TABLE,
+                       menuschema = item.MENU_TABLE,
+                       sortby = item.MENU_SORT_BY,
+                       mname = item.MODULE_NAME
+                   })">
+
+                            <div class="module-icon">
+                                <i class="@(item.TECHNOLOGY != "MVC" ? "fas fa-file-alt" : ModuleIcon(item.MODULE_NAME))"
+                                   aria-hidden="true"></i>
+                            </div>
+
+                            <div class="module-title">@item.MODULE_NAME</div>
+
+                            <div class="module-foot">
+                                <span class="module-tag">
+                                    <span class="dot"></span>
+                                    @(item.TECHNOLOGY == "MVC" ? "Entry" : "Reports")
+                                </span>
+
+                                <span class="module-arrow">
+                                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                                </span>
                             </div>
                         </a>
                     </div>

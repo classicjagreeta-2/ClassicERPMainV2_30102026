@@ -1,0 +1,64 @@
+@{
+    Layout = null;
+}
+<title>Classic ERP Payroll - @System.Configuration.ConfigurationManager.AppSettings["DatabaseType"]</title>
+
+<link rel="icon" href="~/Content/libraries/assets/images/faviconcc.ico" type="image/x-icon">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:400,600,800" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="\Content\libraries\bower_components\bootstrap\css\bootstrap.min.css">
+<link rel="stylesheet" type="text/css" href="\Content\libraries\assets\icon\feather\css\feather.css">
+<link rel="stylesheet" type="text/css" href="\Content\libraries\assets\css\style.css">
+
+<div class="pcoded">
+    <div class="pcoded-container navbar-wrapper">
+        <div class="pcoded-main-container">
+            <div>
+                <div class="pcoded-content">
+                    <div class="pcoded-inner-content">
+                        <div class="main-body">
+                            <div class="page-wrapper">
+                                <div class="page-header" style="text-align:center">
+                                    <div class="row align-items-end">
+                                        <div class="col-lg-12">
+                                            <div class="page-header-title">
+                                                <div class="d-inline">
+                                                    <h4>@(string.IsNullOrEmpty(ViewBag.MName as string) ? "COMPANY SELECTION" : ViewBag.MName.ToString().ToUpper())</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="page-body">
+                                    <div class="col-sm-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <a href="@Url.Action("SelectModule", "Module")" class="btn btn-default pull-right" style="color:red">CLOSE</a>
+                                            </div>
+                                            <div class="card-block">
+                                                <div class="row justify-content-center" style="padding:30px 0;">
+                                                    <div class="col-md-8 text-center">
+                                                        <i class="feather icon-alert-triangle" style="font-size:48px;color:#e46a76;"></i>
+                                                        <h4 style="margin-top:15px;">Could not load company data</h4>
+                                                        <p style="color:#777;">
+                                                            The server returned an error (<strong>@ViewBag.ApiErrorStatus</strong>) while fetching companies for this module.
+                                                            This is not a login problem - please try again, or report this to support if it persists.
+                                                        </p>
+                                                        @if (!string.IsNullOrEmpty(ViewBag.ApiErrorMessage as string))
+                                                        {
+                                                            <p style="color:#ff0000; font-size: 12px; word-break: break-word;">@ViewBag.ApiErrorMessage</p>
+                                                        }
+                                                        <a href="@Url.Action("SelectModule", "Module")" class="btn btn-primary" style="margin-top:10px;">Back to Module Selection</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

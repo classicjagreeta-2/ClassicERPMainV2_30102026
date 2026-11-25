@@ -4322,6 +4322,8 @@
     <Content Include="Views\Module\SelectModule.cshtml" />
     <Content Include="Views\Module\CompanySelection.cshtml" />
     <Content Include="Views\Menu\Index.cshtml" />
+    <Content Include="Views\Module\ApiError.cshtml" />
+    <Content Include="Views\Module\SelectWorkType.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

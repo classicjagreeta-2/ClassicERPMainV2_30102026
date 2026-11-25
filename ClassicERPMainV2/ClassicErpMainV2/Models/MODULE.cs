@@ -21,6 +21,8 @@ namespace ClassicErpMainV2.Models
         public string TECHNOLOGY { get; set; }
         public string UNIT_TABLE { get; set; }
         public string UNIT_FIELD { get; set; }
+        public virtual string IS_SUBMENU { get; set; }
+
 
     }
 }

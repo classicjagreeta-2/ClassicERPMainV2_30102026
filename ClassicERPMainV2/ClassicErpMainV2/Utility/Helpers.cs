@@ -1,18 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
+using System.Data.Common;
+using System.Data.OleDb;
+using System.Globalization;
+using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 using System.Web.Script.Serialization;
-using System.IO;
-using System.Security.Cryptography;
-using System.Data.OleDb;
-using System.Data;
-using System.Data.Common;
-using System.Reflection;
 
 
 namespace ClassicErpMainV2.Utility
@@ -41,10 +42,22 @@ namespace ClassicErpMainV2.Utility
             private DateTime? _lastLoginDt;
             private string _factoryedb;
             private string _firstname;
+            private string _workType;
+            private CompanyInfo _companyInfo = new CompanyInfo();
             public string DocYear
             {
                 get { return _docyear; }
                 set { _docyear = value; }
+            }
+            public CompanyInfo companyInfo
+            {
+                get { return _companyInfo; }
+                set { _companyInfo = value; }
+            }
+            public string WorkType
+            {
+                get { return _workType; }
+                set { _workType = value; }
             }
             public string getUserfullName
             {
@@ -144,7 +157,13 @@ namespace ClassicErpMainV2.Utility
                 set { _menuSchema = value; }
             }
         }
+        public class CompanyInfo
+        {
+            public string SCHEMA_TYPE { get; set; }
 
+            public string YR { get; set; }
+
+        }
         //public static class UserInfoStatic1
         //{
         //    private static string _userid;
