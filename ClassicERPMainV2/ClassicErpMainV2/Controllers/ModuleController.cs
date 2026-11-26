@@ -98,93 +98,50 @@ namespace ClassicErpMainV2.Controllers
         //    return Redirect(URL);
         //}
 
-        public async Task<ActionResult> RedirectToModule(
-    string code,
-    string controlschema,
-    string menuschema,
-    string sortby,
-    string mname,
-    string workType = null)
+
+        private static readonly string[] WorkTypeModules = { "BP", "GP", "HP" };
+
+        private static bool NeedsWorkType(string code)
+        {
+            return WorkTypeModules.Contains((code ?? "").ToUpper());
+        }
+
+      
+
+        public async Task<ActionResult> RedirectToModule(string code, string controlschema, string menuschema, string sortby, string mname, string workType = null)
         {
             var username = Session["Username"];
             var password = Session["Password"];
             var LastLoginDt = Session["LastLoginDt"];
 
-            // Save work type when Salary or Wages is selected
-            if (!string.IsNullOrEmpty(workType))
-            {
-                var userinfo = Utility.SessionHelper.GetUser();
-
-                if (userinfo != null)
-                {
-                    userinfo.ModuleCode = code;
-                    userinfo.WorkType = workType;
-
-                    _ModuleCode = code;
-
-                    Utility.SessionHelper.SetUser(userinfo);
-                }
-
-                Session["WorkType"] = workType;
-            }
-
             string file = Server.MapPath("~/Config.json");
-
             string json = System.IO.File.ReadAllText(file);
-
             var configJson = JsonConvert.DeserializeObject<List<RootRedirection>>(json);
-
-            var res = configJson?.FirstOrDefault(k =>
-                k.modulecode != null &&
-                k.modulecode.Contains(code.ToUpper()));
+            var res = configJson?.FirstOrDefault(k => k.modulecode.Contains((code ?? "").ToUpper()));
 
             if (res == null)
             {
                 return Redirect("/");
             }
 
-            string URL;
+            var hosturl = res.isSubDomain == true ? $"{res.hosturl}{code}" : $"{res.hosturl}";
 
-            if (res.isSubDomain == true)
-            {
-                var hosturl = $"{res.hosturl}{code}";
+            string URL = string.Format(res.redirection, hosturl, code, controlschema, menuschema, sortby, mname, username, LastLoginDt, password);
 
-                URL = string.Format(
-                    res.redirection,
-                    hosturl,
-                    code,
-                    controlschema,
-                    menuschema,
-                    sortby,
-                    mname,
-                    username,
-                    LastLoginDt,
-                    password,
-                    workType
-                );
-            }
-            else
+            // Only BP, GP, HP carry the work type
+            var workTypeModules = new[] { "BP", "GP", "HP" };
+            if (workTypeModules.Contains((code ?? "").ToUpper()) && !string.IsNullOrEmpty(workType))
             {
-                URL = string.Format(
-                    res.redirection,
-                    res.hosturl,
-                    code,
-                    controlschema,
-                    menuschema,
-                    sortby,
-                    mname,
-                    username,
-                    LastLoginDt,
-                    password,
-                    workType
-                );
+                URL += (URL.Contains("?") ? "&" : "?") + "workType=" + HttpUtility.UrlEncode(workType);
             }
 
             return Redirect(URL);
         }
 
-     
-        
+
+
+
+
         public async Task<ActionResult> CompanySelection(string code, string controlschema, string menuschema, string sortby, string mname)
         {
             Helpers.UserInfo.ModuleCode = code;

@@ -1,5 +1,14 @@
 [
   {
+  "projectName": "Finance",
+  "hosturl": "http://103.234.116.64:82/",
+  "redirection": "{0}/Module/CompanySelection?code={1}&controlschema={2}&menuschema={3}&sortby={4}&mname={5}&UserName={6}&LastLoginDt={7}&Password={8}",
+  "authUrl": "Users/authenticate",
+  "dbtype": "ORACLE", //select one database type from SQL OR ORACLE,
+  "isSubDomain": true,
+  "modulecode": [ "FN","BP","IN","BL","GP","PT","TS","WH","HS" ]
+  },
+  {
     "projectName": "Finance",
     "hosturl": "https://localhost:44349/",
     "redirection": "{0}/Module/CompanySelection?code={1}&controlschema={2}&menuschema={3}&sortby={4}&mname={5}&UserName={6}&LastLoginDt={7}&Password={8}",
